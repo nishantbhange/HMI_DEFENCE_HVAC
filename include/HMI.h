@@ -142,6 +142,7 @@ extern volatile  uint32_t Global_Tick_Count;
  void HMI_Init(HMI_t *HMI );
 void Relay_Cntrl( Part_t part,bool Enable);
 void Led_Cntrl( Part_t part,bool Enable);
+void Error_Handler( void  );
 
 
 

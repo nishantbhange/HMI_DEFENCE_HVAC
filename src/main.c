@@ -43,7 +43,7 @@ volatile int exit_code = 0;
 int main(void)
 {
     /* Write your code here */
-
+//set BLC PIN high
     for(;;)
     {
         if(exit_code != 0)

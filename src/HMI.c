@@ -367,49 +367,56 @@
 
 void Relay_Cntrl( Part_t part,bool Enable){
 	switch(part){
+	//R1-PTB1-solenoid valve
+	//R2-PTB0-Reserve
+	//R3-PTC9-Heater
+	//R4-PTC8-Reserve
+	//R5-PTA7-Blower
+	//R6-PTA6-Condenser
+	//R7-PTE7-Compressor
 
 	case Condenser :
 		if(Enable){
-			PINS_DRV_SetPins(IP_PTB , 1U<<12);
+			PINS_DRV_SetPins(IP_PTA , 1U<<6);
 		}
 		else{
-			PINS_DRV_ClearPins(IP_PTB , 1U<<12);
+			PINS_DRV_ClearPins(IP_PTA , 1U<<6);
 		}
 	break ;
 
 	case Compressor :
 		if(Enable){
-			PINS_DRV_SetPins(IP_PTB , 1U<<13);
+			PINS_DRV_SetPins(IP_PTE , 1U<<7);
 		}
 		else{
-			PINS_DRV_ClearPins(IP_PTB , 1U<<13);
+			PINS_DRV_ClearPins(IP_PTE , 1U<<7);
 		}
 	break ;
 
 	case Blower :
 		if(Enable){
-			PINS_DRV_SetPins(IP_PTD , 1U<<4);
+			PINS_DRV_SetPins(IP_PTA , 1U<<6);
 		}
 		else{
-			PINS_DRV_ClearPins(IP_PTD , 1U<<4);
+			PINS_DRV_ClearPins(IP_PTA , 1U<<6);
 		}
 	break ;
 
 	case Heater :
 		if(Enable){
-			PINS_DRV_SetPins(IP_PTD , 1U<<2);
+			PINS_DRV_SetPins(IP_PTC , 1U<<9);
 		}
 		else{
-			PINS_DRV_ClearPins(IP_PTD , 1U<<2);
+			PINS_DRV_ClearPins(IP_PTC , 1U<<9);
 		}
 	break ;
 
 	case Solenoid_Valve :
 		if(Enable){
-			PINS_DRV_SetPins(IP_PTA , 1U<<2);
+			PINS_DRV_SetPins(IP_PTB , 1U<<9);
 		}
 		else{
-			PINS_DRV_ClearPins(IP_PTA , 1U<<2);
+			PINS_DRV_ClearPins(IP_PTB , 1U<<9);
 		}
 	break ;
 
@@ -426,24 +433,15 @@ void Led_Cntrl( Part_t part,bool Enable){
 
 		case Condenser :
 			if(Enable){
-				PINS_DRV_ClearPins(IP_PTD , 1U<<16);
-			}
-			else{
-				PINS_DRV_SetPins(IP_PTD , 1U<<16);
-			}
-
-		break ;
-
-		case Compressor :
-			if(Enable){
 				PINS_DRV_ClearPins(IP_PTE , 1U<<3);
 			}
 			else{
 				PINS_DRV_SetPins(IP_PTE , 1U<<3);
 			}
 
-	    break ;
-		case Blower :
+		break ;
+
+		case Compressor :
 			if(Enable){
 				PINS_DRV_ClearPins(IP_PTB , 1U<<6);
 			}
@@ -451,23 +449,32 @@ void Led_Cntrl( Part_t part,bool Enable){
 				PINS_DRV_SetPins(IP_PTB , 1U<<6);
 			}
 
+	    break ;
+		case Blower :
+			if(Enable){
+				PINS_DRV_ClearPins(IP_PTB , 1U<<7);
+			}
+			else{
+				PINS_DRV_SetPins(IP_PTB , 1U<<7);
+			}
+
 		break ;
 
 		case Heater :
-			if(Enable){
-				PINS_DRV_ClearPins(IP_PTE , 1U<<9);
-			}
-			else{
-				PINS_DRV_SetPins(IP_PTE , 1U<<9);
-			}
-		break ;
-
-		case Vent :
 			if(Enable){
 				PINS_DRV_ClearPins(IP_PTD , 1U<<15);
 			}
 			else{
 				PINS_DRV_SetPins(IP_PTD , 1U<<15);
+			}
+		break ;
+
+		case Vent :
+			if(Enable){
+				PINS_DRV_ClearPins(IP_PTD , 1U<<16);
+			}
+			else{
+				PINS_DRV_SetPins(IP_PTD , 1U<<16);
 			}
 		break ;
 
@@ -519,4 +526,6 @@ void SysTick_Handler(void){
 
 
 }
+void Error_Handler( void  ){
 
+}

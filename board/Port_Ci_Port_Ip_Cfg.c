@@ -155,6 +155,7 @@ PortContainer_0_BOARD_InitPeripherals:
   - {pin_num: '39', peripheral: PORTE, signal: 'port, 7', pin_signal: PTE7, direction: OUTPUT}
   - {pin_num: '47', peripheral: PORTA, signal: 'port, 3', pin_signal: PTA3, direction: INPUT, DFE: state_1}
   - {pin_num: '48', peripheral: PORTA, signal: 'port, 2', pin_signal: PTA2, direction: INPUT, DFE: state_1}
+  - {pin_num: '11', peripheral: PORTB, signal: 'port, 7', pin_signal: PTB7, direction: OUTPUT}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -335,6 +336,19 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .portBase        = IP_PORTB,
         .gpioBase        = IP_PTB,
         .pinPortIdx      = 6U,
+        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
+        .passiveFilter   = (boolean)FALSE,
+        .mux             = PORT_MUX_AS_GPIO,
+        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
+        .direction       = PORT_CI_PORT_PIN_OUT,
+        .digitalFilter   = (boolean)FALSE,
+        .initValue       = 0U,
+    },
+    {
+        .portBase        = IP_PORTB,
+        .gpioBase        = IP_PTB,
+        .pinPortIdx      = 7U,
         .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
         .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
         .passiveFilter   = (boolean)FALSE,
