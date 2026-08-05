@@ -126,7 +126,7 @@ void PORTA_IRQHandler(void){
 			  //falling edge ->hpsw error has cleared !!
 				              else{
 					            Event=Event_Error_Clear;
-					            Current_Error= Error_None;
+					            Current_Error= Error_HPSW_Clear;
 					                            }
 
 			         }
@@ -147,7 +147,7 @@ void PORTA_IRQHandler(void){
 	           //falling edge ->lpsw error has cleared !!
 				 else {
 	               	Event=Event_Error_Clear;
-	               	Current_Error= Error_None;
+	               	Current_Error= Error_LPSW_Clear;
 	               }
 
 	        }

@@ -23,8 +23,11 @@
 
 
 
-#define MAX_TEMP 30
-#define MIN_TEMP 20
+#define MAX_TEMP     30
+#define MIN_TEMP     20
+
+#define Error_Set    1
+#define Error_Reset  0
 
 typedef enum{
   Auto_Mode ,
@@ -125,7 +128,9 @@ typedef enum {
 	Error_Event_LPSW,
 	Error_Event_HPSW,
 	Error_Event_ADC ,
-	Error_None ,
+	Error_LPSW_Clear,
+	Error_HPSW_Clear,
+    Error_ADC_Clear ,
 
 }ErrorCode_t;
 
@@ -137,14 +142,16 @@ extern volatile  HMI_t HMI;
 extern volatile  uint32_t Global_Tick_Count;
 
  void Update_Output(HMI_t *HMI);
- void Update_Display(HMI_t *HMI);
+ void Update_Display(HMI_t HMI);
  void HMI_Process_Event(HMI_Event_t Event );
  void HMI_Init(HMI_t *HMI );
 void Relay_Cntrl( Part_t part,bool Enable);
 void Led_Cntrl( Part_t part,bool Enable);
 void Error_Handler( void  );
 
-
+void LPSW_Error_Handler(bool Error_Set_Reset );
+void HPSW_Error_Handler(bool Error_Set_Reset );
+void ADC_Error_Handler(bool Error_Set_Reset );
 
 
 #endif /* HMI_H_ */

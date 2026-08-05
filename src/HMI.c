@@ -6,6 +6,7 @@
  */
 #include"HMI.h"
 #include"EEPROM.h"
+#include<stdbool.h>
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
  static uint32_t Systick_Tick_Count =0;
@@ -15,6 +16,7 @@
  EEPROM_Data_t First_EEPROM_Data;
  volatile HMI_Event_t Event;
  volatile ErrorCode_t Current_Error;
+ static Compressor_t Prev_Compressor_State;
 
 
 
@@ -293,12 +295,12 @@
 
 }
 
- void Update_Display(HMI_t *HMI){
+ void Update_Display(HMI_t HMI){
 	const char* Display_Mode;
 
 
-   if(HMI->mode!=Prev_Mode){
-	if(HMI->mode==Auto_Mode){
+   if(HMI.mode!=Prev_Mode){
+	if(HMI.mode==Auto_Mode){
 
 	Display_Mode="AUTO VENT MODE";
 
@@ -309,23 +311,23 @@
 
 	}
 
-	Prev_Mode=HMI->mode;
+	Prev_Mode=HMI.mode;
 	LCD_String_XY(0, 0, Display_Mode);
 
    }
 
    char Display_Temp[8];
-   if(HMI->set_temp!=Prev_Set_Temp){
+   if(HMI.set_temp!=Prev_Set_Temp){
 
-	snprintf(Display_Temp,sizeof(Display_Temp),"SET %d",(uint8_t)HMI->set_temp);
+	snprintf(Display_Temp,sizeof(Display_Temp),"SET %d",(uint8_t)HMI.set_temp);
 	LCD_String_XY(1, 0, Display_Temp);
-	Prev_Set_Temp=HMI->set_temp;
+	Prev_Set_Temp=HMI.set_temp;
 
    }
-   if(HMI->curr_temp != Prev_Curr_Temp){
-	snprintf(Display_Temp,sizeof(Display_Temp),"AIR %d",(uint8_t)HMI->curr_temp);
+   if(HMI.curr_temp != Prev_Curr_Temp){
+	snprintf(Display_Temp,sizeof(Display_Temp),"AIR %d",(uint8_t)HMI.curr_temp);
 	LCD_String_XY(1, 8, Display_Temp);
-	Prev_Curr_Temp=HMI->curr_temp;
+	Prev_Curr_Temp=HMI.curr_temp;
 
    }
 
@@ -526,6 +528,116 @@ void SysTick_Handler(void){
 
 
 }
+
 void Error_Handler( void  ){
+if(Event==Event_Error){
+	switch(Current_Error){
+
+	case Error_Event_LPSW:
+		LPSW_Error_Handler(Error_Set);
+		break ;
+	case Error_Event_HPSW:
+		HPSW_Error_Handler(Error_Set);
+		break ;
+	case Error_Event_ADC :
+		ADC_Error_Handler(Error_Set);
+       break ;
+
+      default:
+    	  break ;
+	}
+
+}
+else if(Event==Event_Error_Clear){
+	switch(Current_Error){
+
+	case Error_LPSW_Clear:
+		LPSW_Error_Handler(Error_Reset);
+		break ;
+	case Error_HPSW_Clear:
+		HPSW_Error_Handler(Error_Reset);
+		break ;
+	case Error_ADC_Clear :
+		ADC_Error_Handler(Error_Reset);
+		break ;
+
+	 default:
+	    break ;
+
+	}
+
+}
+
+}
+void LPSW_Error_Handler(bool Error_Set_Reset ){
+	const char* Error_String="LPSW ERROR";
+if(Error_Set_Reset==Error_Set){
+	Prev_Compressor_State=HMI.compressor_state;
+	if(HMI.compressor_state!=Compressor_off)
+	{
+		HMI.compressor_state=Compressor_off;
+	}
+	LCD_Clear();
+	while(Current_Error!=Error_LPSW_Clear){
+
+		LCD_String_XY(0, 4, Error_String);
+
+	}
+
+
+}
+else if(Error_Set_Reset==Error_Reset){
+
+	if(Prev_Compressor_State==Compressor_on){
+		HMI.compressor_state=Compressor_wait_to_on;
+	}
+	else{
+		HMI.compressor_state=Prev_Compressor_State;
+		Update_Display(HMI);
+	}
+
+}
+
+
+}
+void HPSW_Error_Handler(bool Error_Set_Reset){
+	const char* Error_String="HPSW ERROR";
+if(Error_Set_Reset==Error_Set){
+	Prev_Compressor_State=HMI.compressor_state;
+	if(HMI.compressor_state!=Compressor_off)
+	{
+		HMI.compressor_state=Compressor_off;
+	}
+	LCD_Clear();
+	while(Current_Error!=Error_HPSW_Clear){
+
+		LCD_String_XY(0, 4, Error_String);
+
+	}
+
+
+}
+else if(Error_Set_Reset==Error_Reset){
+
+	if(Prev_Compressor_State==Compressor_on){
+		HMI.compressor_state=Compressor_wait_to_on;
+	}
+	else{
+		HMI.compressor_state=Prev_Compressor_State;
+		Update_Display(HMI);
+	}
+
+}
+
+
+}
+void ADC_Error_Handler(bool Error_Set_Reset ){
+	const char* Error_String="ADC ERROR";
+	if(Error_Set_Reset==Error_Set){
+		LCD_Clear();
+			while(Current_Error!=Error_ADC_Clear){
+			LCD_String_XY(0, 4, Error_String);
+          }
+	}
 
 }
