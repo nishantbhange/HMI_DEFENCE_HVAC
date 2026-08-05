@@ -7,11 +7,14 @@
 
 
 #include "ADC.h"
+#include "NVIC.h"
 
 volatile ADC_Readings_t ADC_Data ;
 volatile ADC_t ADC ;
 
 bool ADC_Init(){
+	NVIC_SetPriority(PORTC_IRQn, 2);
+	NVIC_EnableIRQ(PORTC_IRQn);
 	// FIRCDIV2 = 4: FIRCDIV2 divide by 8
 	IP_SCG->FIRCDIV &=(~(SCG_FRC_DIV_MASK));
 	IP_SCG->FIRCDIV |= (FRCDIV2_8<<SCG_FIRCDIV_BIT_FIRCDIV2);
@@ -57,7 +60,7 @@ bool ADC_Init(){
 		return false ;
 
 	}
-	ADC.ADC_State==ADC_FREE;
+	ADC.ADC_State=ADC_FREE;
 	return true ;
 
 

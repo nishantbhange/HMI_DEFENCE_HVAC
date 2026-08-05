@@ -1,6 +1,7 @@
 #include"GPIO.h"
 #include"HMI.h"
 #include"ADC.h"
+#include"NVIC.h"
 #include <math.h>
 static volatile uint32_t Press_Start_Tick=0;
 volatile uint32_t Last_Tick[BTN_COUNT]={0};
@@ -16,7 +17,7 @@ static bool Is_Pressed=0;
 #define R0          5000.0f
 #define Rfixed      5000.0f
 #define T0          298.15f
-#define Beta        3740.0f
+#define Beta        3470.0f
 
  void PINS_DRV_ClearPins(GPIO_Type * const base, uint32_t pins)
 {
@@ -37,6 +38,68 @@ static bool Is_Pressed=0;
     return base->PDIR;
 }
 
+  void Interrupt_Init(void ){
+
+	  IP_PORTB->ISFR = 0xFFFFFFFF;
+	  IP_PORTC->ISFR = 0xFFFFFFFF;
+	  IP_PORTD->ISFR = 0xFFFFFFFF;
+	  IP_PORTE->ISFR = 0xFFFFFFFF;
+	  IP_PORTA->ISFR = 0xFFFFFFFF;
+	  //PTB5 temp++
+	  //PTB4 PWR
+	  IP_PORTB->PCR[5] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	  IP_PORTB->PCR[5] |= PORT_PCR_IRQC(Rising_Edge);
+
+
+	  IP_PORTB->PCR[4] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	  IP_PORTB->PCR[4] |= PORT_PCR_IRQC(Either_Edge);
+	  NVIC_SetPriority(PORTB_IRQn, 2);
+	  NVIC_EnableIRQ(PORTB_IRQn);
+
+
+	 //PTC0 -ADC channel 8
+	 //PTC1 -ADC channel 9
+	 //PTC2 -compressor switch
+	 //PTC3 -Heater Switch
+	 //PTC17 -ADC channel 15
+	 //PTC15 -ADC channel 12
+
+
+
+
+	 IP_PORTC->PCR[2] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	 IP_PORTC->PCR[2] |= PORT_PCR_IRQC(Rising_Edge);
+
+
+	 IP_PORTC->PCR[3] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	 IP_PORTC->PCR[3] |=PORT_PCR_IRQC(Rising_Edge);
+	 NVIC_SetPriority(PORTC_IRQn, 2);
+	 NVIC_EnableIRQ(PORTC_IRQn);
+
+
+	  //PTA2 -HPSW
+	  //PTA3 -LPSW
+	  IP_PORTA->PCR[2] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	  IP_PORTA->PCR[2] |= PORT_PCR_IRQC(Rising_Edge);
+
+
+	  IP_PORTA->PCR[3] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	  IP_PORTA->PCR[3] |= PORT_PCR_IRQC(Rising_Edge);
+	  NVIC_SetPriority(PORTA_IRQn, 2);
+	  NVIC_EnableIRQ(PORTA_IRQn);
+
+
+	  //PTD7-blower
+	  IP_PORTD->PCR[7] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	  IP_PORTD->PCR[7] |= PORT_PCR_IRQC(Rising_Edge);
+
+      //PTE8-temp--
+	  IP_PORTE->PCR[8] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
+	  IP_PORTE->PCR[8] |= PORT_PCR_IRQC(Rising_Edge);
+	  NVIC_SetPriority(PORTE_IRQn, 2);
+	  NVIC_EnableIRQ(PORTE_IRQn);
+
+  }
 
 
 static bool Debounce_Check(Button_Id_t id) {
@@ -47,12 +110,59 @@ static bool Debounce_Check(Button_Id_t id) {
     return false;
 }
 
+void PORTA_IRQHandler(void){
+	uint32_t flags =IP_PORTA->ISFR;
+	//PTA2 -HPSW
+	if((flags>>HPSW_FLAG)&0x01U){
+
+		//HPSW interrupt handler set the error flag
+			if(Debounce_Check(BTN_HPSW)){
+			 Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01;
+				//rising edge ->hpsw error has happened !!
+				              if(Is_Pressed){
+								 Event=Event_Error;
+								 Current_Error=Error_Event_HPSW;
+								                }
+			  //falling edge ->hpsw error has cleared !!
+				              else{
+					            Event=Event_Error_Clear;
+					            Current_Error= Error_None;
+					                            }
+
+			         }
+			 IP_PORTA->ISFR|=(1<<HPSW_FLAG);
+			}
+
+
+	//PTA3 -LPSW
+	if((flags>>LPSW_FLAG)&0x01U){
+		//LPSW interrupt handler set the error flag
+			if(Debounce_Check(BTN_LPSW)){
+				 Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_LPSW)&0x01;
+				 //rising edge ->lpsw error has happened !!
+				 if(Is_Pressed){
+						Event=Event_Error;
+					    Current_Error=Error_Event_LPSW;
+				                }
+	           //falling edge ->lpsw error has cleared !!
+				 else {
+	               	Event=Event_Error_Clear;
+	               	Current_Error= Error_None;
+	               }
+
+	        }
+			IP_PORTA->ISFR|=(1<<LPSW_FLAG);
+
+		}
+
+
+}
+
 
 void PORTB_IRQHandler(void){
 	//PTB5 temp++
 	//PTB4 PWR
-	//PTB1 LPSW
-	//PTB0 HPSW
+
 	uint32_t flags =IP_PORTB->ISFR;
 if((flags>>TEMP_INC_FLAG)&0x01U){
 
@@ -95,44 +205,7 @@ if((flags>>PWR_FLAG)&0x01U){
 
 	}
 
- if((flags>>LPSW_FLAG)&0x01U){
-	//LPSW interrupt handler set the error flag
-		if(Debounce_Check(BTN_LPSW)){
-			 Is_Pressed=(PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_LPSW)&0x01;
-			 //rising edge ->lpsw error has happened !!
-			 if(Is_Pressed){
-					Event=Event_Error;
-				    Current_Error=Error_Event_LPSW;
-			                }
-            //falling edge ->lpsw error has cleared !!
-			 else {
-                	Event=Event_Error_Clear;
-                	Current_Error= Error_None;
-                }
 
-         }
-IP_PORTB->ISFR|=(1<<LPSW_FLAG);
-
-	}
-if((flags>>HPSW_FLAG)&0x01U){
-
-	//HPSW interrupt handler set the error flag
-		if(Debounce_Check(BTN_HPSW)){
-		 Is_Pressed=(PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_HPSW)&0x01;
-			//rising edge ->hpsw error has happened !!
-			              if(Is_Pressed){
-							 Event=Event_Error;
-							 Current_Error=Error_Event_HPSW;
-							                }
-		  //falling edge ->hpsw error has cleared !!
-			              else{
-				            Event=Event_Error_Clear;
-				            Current_Error= Error_None;
-				                            }
-
-		         }
-		IP_PORTB->ISFR|=(1<<HPSW_FLAG);
-		}
 
 }
 void PORTC_IRQHandler(void){

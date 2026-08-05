@@ -120,8 +120,8 @@ extern "C"{
 PortContainer_0_BOARD_InitPeripherals:
 - options: {callFromInitBoot: 'true', coreID: core0}
 - pin_list:
-  - {pin_num: '25', peripheral: ADC0, signal: adc0_se9, pin_signal: PTC1, direction: INPUT}
-  - {pin_num: '27', peripheral: ADC0, signal: adc0_se15, pin_signal: PTC17, direction: INPUT}
+  - {pin_num: '25', peripheral: ADC0, signal: adc0_se9, pin_signal: PTC1, direction: INPUT, DFE: state_1}
+  - {pin_num: '27', peripheral: ADC0, signal: adc0_se15, pin_signal: PTC17, direction: INPUT, DFE: state_1}
   - {pin_num: '12', peripheral: PORTB, signal: 'port, 6', pin_signal: PTB6, direction: OUTPUT}
   - {pin_num: '13', peripheral: PORTE, signal: 'port, 3', pin_signal: PTE3, direction: OUTPUT}
   - {pin_num: '14', peripheral: PORTD, signal: 'port, 16', pin_signal: PTD16, direction: OUTPUT}
@@ -132,17 +132,8 @@ PortContainer_0_BOARD_InitPeripherals:
   - {pin_num: '20', peripheral: PORTC, signal: 'port, 3', pin_signal: PTC3, direction: INPUT, DFE: state_1}
   - {pin_num: '21', peripheral: PORTC, signal: 'port, 2', pin_signal: PTC2, direction: INPUT, DFE: state_1}
   - {pin_num: '22', peripheral: PORTD, signal: 'port, 7', pin_signal: PTD7, direction: INPUT, DFE: state_1}
-  - {pin_num: '26', peripheral: ADC0, signal: adc0_se8, pin_signal: PTC0, direction: INPUT}
-  - {pin_num: '29', peripheral: ADC0, signal: adc0_se13, pin_signal: PTC15, direction: INPUT}
-  - {pin_num: '33', peripheral: PORTB, signal: 'port, 1', pin_signal: PTB1, direction: INPUT}
-  - {pin_num: '34', peripheral: PORTB, signal: 'port, 0', pin_signal: PTB0, direction: INPUT}
-  - {pin_num: '48', peripheral: PORTA, signal: 'port, 2', pin_signal: PTA2, direction: OUTPUT}
-  - {pin_num: '47', peripheral: PORTA, signal: 'port, 3', pin_signal: PTA3, direction: OUTPUT}
-  - {pin_num: '46', peripheral: PORTD, signal: 'port, 2', pin_signal: PTD2, direction: OUTPUT}
-  - {pin_num: '45', peripheral: PORTD, signal: 'port, 3', pin_signal: PTD3, direction: OUTPUT}
-  - {pin_num: '44', peripheral: PORTD, signal: 'port, 4', pin_signal: PTD4, direction: OUTPUT}
-  - {pin_num: '43', peripheral: PORTB, signal: 'port, 12', pin_signal: PTB12, direction: OUTPUT}
-  - {pin_num: '42', peripheral: PORTB, signal: 'port, 13', pin_signal: PTB13, direction: OUTPUT}
+  - {pin_num: '26', peripheral: ADC0, signal: adc0_se8, pin_signal: PTC0, direction: INPUT, DFE: state_1}
+  - {pin_num: '29', peripheral: ADC0, signal: adc0_se13, pin_signal: PTC15, direction: INPUT, DFE: state_1}
   - {pin_num: '61', peripheral: PORTC, signal: 'port, 5', pin_signal: PTC5, direction: OUTPUT}
   - {pin_num: '59', peripheral: PORTE, signal: 'port, 1', pin_signal: PTE1, direction: OUTPUT}
   - {pin_num: '58', peripheral: JTAG_TRACENOETM, signal: jtag_tdo_noetm_trace_swo, pin_signal: PTA10, direction: OUTPUT}
@@ -155,6 +146,15 @@ PortContainer_0_BOARD_InitPeripherals:
   - {pin_num: '51', peripheral: PORTC, signal: 'port, 7', pin_signal: PTC7, direction: OUTPUT}
   - {pin_num: '50', peripheral: PORTA, signal: 'port, 0', pin_signal: PTA0, direction: OUTPUT}
   - {pin_num: '17', peripheral: PORTE, signal: 'port, 8', pin_signal: PTE8, direction: INPUT, DFE: state_1}
+  - {pin_num: '33', peripheral: PORTB, signal: 'port, 1', pin_signal: PTB1, direction: OUTPUT}
+  - {pin_num: '34', peripheral: PORTB, signal: 'port, 0', pin_signal: PTB0, direction: OUTPUT}
+  - {pin_num: '35', peripheral: PORTC, signal: 'port, 9', pin_signal: PTC9, direction: OUTPUT}
+  - {pin_num: '36', peripheral: PORTC, signal: 'port, 8', pin_signal: PTC8, direction: OUTPUT}
+  - {pin_num: '37', peripheral: PORTA, signal: 'port, 7', pin_signal: PTA7, direction: OUTPUT}
+  - {pin_num: '38', peripheral: PORTA, signal: 'port, 6', pin_signal: PTA6, direction: OUTPUT}
+  - {pin_num: '39', peripheral: PORTE, signal: 'port, 7', pin_signal: PTE7, direction: OUTPUT}
+  - {pin_num: '47', peripheral: PORTA, signal: 'port, 3', pin_signal: PTA3, direction: INPUT, DFE: state_1}
+  - {pin_num: '48', peripheral: PORTA, signal: 'port, 2', pin_signal: PTA2, direction: INPUT, DFE: state_1}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -236,6 +236,32 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .passiveFilter   = (boolean)FALSE,
         .mux             = PORT_MUX_AS_GPIO,
         .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
+        .direction       = PORT_CI_PORT_PIN_IN,
+        .digitalFilter   = (boolean)TRUE,
+        .initValue       = 0U,
+    },
+    {
+        .portBase        = IP_PORTA,
+        .gpioBase        = IP_PTA,
+        .pinPortIdx      = 3U,
+        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
+        .passiveFilter   = (boolean)FALSE,
+        .mux             = PORT_MUX_AS_GPIO,
+        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
+        .direction       = PORT_CI_PORT_PIN_IN,
+        .digitalFilter   = (boolean)TRUE,
+        .initValue       = 0U,
+    },
+    {
+        .portBase        = IP_PORTA,
+        .gpioBase        = IP_PTA,
+        .pinPortIdx      = 6U,
+        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
+        .passiveFilter   = (boolean)FALSE,
+        .mux             = PORT_MUX_AS_GPIO,
+        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
         .direction       = PORT_CI_PORT_PIN_OUT,
         .digitalFilter   = (boolean)FALSE,
         .initValue       = 0U,
@@ -243,7 +269,7 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
     {
         .portBase        = IP_PORTA,
         .gpioBase        = IP_PTA,
-        .pinPortIdx      = 3U,
+        .pinPortIdx      = 7U,
         .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
         .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
         .passiveFilter   = (boolean)FALSE,
@@ -262,32 +288,6 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .passiveFilter   = (boolean)FALSE,
         .mux             = PORT_MUX_AS_GPIO,
         .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .direction       = PORT_CI_PORT_PIN_IN,
-        .digitalFilter   = (boolean)FALSE,
-        .initValue       = 0U,
-    },
-    {
-        .portBase        = IP_PORTB,
-        .gpioBase        = IP_PTB,
-        .pinPortIdx      = 1U,
-        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
-        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
-        .passiveFilter   = (boolean)FALSE,
-        .mux             = PORT_MUX_AS_GPIO,
-        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .direction       = PORT_CI_PORT_PIN_IN,
-        .digitalFilter   = (boolean)FALSE,
-        .initValue       = 0U,
-    },
-    {
-        .portBase        = IP_PORTB,
-        .gpioBase        = IP_PTB,
-        .pinPortIdx      = 12U,
-        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
-        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
-        .passiveFilter   = (boolean)FALSE,
-        .mux             = PORT_MUX_AS_GPIO,
-        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
         .direction       = PORT_CI_PORT_PIN_OUT,
         .digitalFilter   = (boolean)FALSE,
         .initValue       = 0U,
@@ -295,7 +295,7 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
     {
         .portBase        = IP_PORTB,
         .gpioBase        = IP_PTB,
-        .pinPortIdx      = 13U,
+        .pinPortIdx      = 1U,
         .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
         .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
         .passiveFilter   = (boolean)FALSE,
@@ -353,7 +353,7 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .passiveFilter   = (boolean)FALSE,
         .mux             = PORT_MUX_ADC_INTERLEAVE,
         .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .digitalFilter   = (boolean)FALSE,
+        .digitalFilter   = (boolean)TRUE,
     },
     {
         .portBase        = IP_PORTC,
@@ -364,7 +364,7 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .passiveFilter   = (boolean)FALSE,
         .mux             = PORT_MUX_ADC_INTERLEAVE,
         .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .digitalFilter   = (boolean)FALSE,
+        .digitalFilter   = (boolean)TRUE,
     },
     {
         .portBase        = IP_PORTC,
@@ -375,7 +375,7 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .passiveFilter   = (boolean)FALSE,
         .mux             = PORT_MUX_ALT0,
         .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .digitalFilter   = (boolean)FALSE,
+        .digitalFilter   = (boolean)TRUE,
     },
     {
         .portBase        = IP_PORTC,
@@ -386,7 +386,7 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .passiveFilter   = (boolean)FALSE,
         .mux             = PORT_MUX_ALT0,
         .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .digitalFilter   = (boolean)FALSE,
+        .digitalFilter   = (boolean)TRUE,
     },
     {
         .portBase        = IP_PORTC,
@@ -454,6 +454,32 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .initValue       = 0U,
     },
     {
+        .portBase        = IP_PORTC,
+        .gpioBase        = IP_PTC,
+        .pinPortIdx      = 8U,
+        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
+        .passiveFilter   = (boolean)FALSE,
+        .mux             = PORT_MUX_AS_GPIO,
+        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
+        .direction       = PORT_CI_PORT_PIN_OUT,
+        .digitalFilter   = (boolean)FALSE,
+        .initValue       = 0U,
+    },
+    {
+        .portBase        = IP_PORTC,
+        .gpioBase        = IP_PTC,
+        .pinPortIdx      = 9U,
+        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
+        .passiveFilter   = (boolean)FALSE,
+        .mux             = PORT_MUX_AS_GPIO,
+        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
+        .direction       = PORT_CI_PORT_PIN_OUT,
+        .digitalFilter   = (boolean)FALSE,
+        .initValue       = 0U,
+    },
+    {
         .portBase        = IP_PORTD,
         .gpioBase        = IP_PTD,
         .pinPortIdx      = 15U,
@@ -470,45 +496,6 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .portBase        = IP_PORTD,
         .gpioBase        = IP_PTD,
         .pinPortIdx      = 16U,
-        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
-        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
-        .passiveFilter   = (boolean)FALSE,
-        .mux             = PORT_MUX_AS_GPIO,
-        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .direction       = PORT_CI_PORT_PIN_OUT,
-        .digitalFilter   = (boolean)FALSE,
-        .initValue       = 0U,
-    },
-    {
-        .portBase        = IP_PORTD,
-        .gpioBase        = IP_PTD,
-        .pinPortIdx      = 2U,
-        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
-        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
-        .passiveFilter   = (boolean)FALSE,
-        .mux             = PORT_MUX_AS_GPIO,
-        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .direction       = PORT_CI_PORT_PIN_OUT,
-        .digitalFilter   = (boolean)FALSE,
-        .initValue       = 0U,
-    },
-    {
-        .portBase        = IP_PORTD,
-        .gpioBase        = IP_PTD,
-        .pinPortIdx      = 3U,
-        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
-        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
-        .passiveFilter   = (boolean)FALSE,
-        .mux             = PORT_MUX_AS_GPIO,
-        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .direction       = PORT_CI_PORT_PIN_OUT,
-        .digitalFilter   = (boolean)FALSE,
-        .initValue       = 0U,
-    },
-    {
-        .portBase        = IP_PORTD,
-        .gpioBase        = IP_PTD,
-        .pinPortIdx      = 4U,
         .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
         .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
         .passiveFilter   = (boolean)FALSE,
@@ -574,6 +561,19 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .portBase        = IP_PORTE,
         .gpioBase        = IP_PTE,
         .pinPortIdx      = 6U,
+        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
+        .passiveFilter   = (boolean)FALSE,
+        .mux             = PORT_MUX_AS_GPIO,
+        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
+        .direction       = PORT_CI_PORT_PIN_OUT,
+        .digitalFilter   = (boolean)FALSE,
+        .initValue       = 0U,
+    },
+    {
+        .portBase        = IP_PORTE,
+        .gpioBase        = IP_PTE,
+        .pinPortIdx      = 7U,
         .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
         .driveStrength   = PORT_DRIVE_STRENGTH_LOW,
         .passiveFilter   = (boolean)FALSE,

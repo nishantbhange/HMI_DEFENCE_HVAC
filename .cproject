@@ -721,7 +721,7 @@
 		<COND_TOOLCHAIN_COMPONENTS_OPTION>COPY=platform.driver.clock;platform.driver.osif;platform.driver.port_ip</COND_TOOLCHAIN_COMPONENTS_OPTION>
 	</storageModule>
 	<storageModule moduleId="com.nxp.s32ds.cle.uct.core">
-		<sdkComponents>platform.driver.clock;platform.driver.rte_mcu;platform.driver.osif;platform.driver.det;platform.driver.port_ip;platform.driver.rte_port;platform.driver.IntCtrl_Ip;platform.driver.port_ci_icu;platform.driver.rte_icu</sdkComponents>
+		<sdkComponents>platform.driver.clock;platform.driver.rte_mcu;platform.driver.osif;platform.driver.det;platform.driver.port_ip;platform.driver.rte_port</sdkComponents>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>

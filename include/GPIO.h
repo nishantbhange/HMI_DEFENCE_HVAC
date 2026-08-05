@@ -29,26 +29,26 @@
 #define LCD_PIN_DB6   9U
 #define LCD_PIN_DB7   10U
 
-#define SW_PIN_PWR   4U
-#define SW_PIN_LPSW   1U
-#define SW_PIN_HPSW   0U
+#define SW_PIN_PWR    4U
+#define SW_PIN_LPSW   3U
+#define SW_PIN_HPSW   2U
 
 //PTB5 temp++
 //PTB4 PWR
-//PTB1 LPSW
-//PTB0 HPSW
-
-#define TEMP_INC_FLAG 5U
-#define PWR_FLAG      4U
-#define LPSW_FLAG     1U
-#define HPSW_FLAG     0U
-
+//PTA3 LPSW
+//PTA2 HPSW
 //PTC0 -ADC channel 8
 //PTC1 -ADC channel 9
 //PTC2 -compressor switch
 //PTC3 -Heater Switch
 //PTC17 -ADC channel 15
 //PTC15 -ADC channel 12
+
+#define TEMP_INC_FLAG 5U
+#define PWR_FLAG      4U
+
+
+
 
 #define ADC_CH8_FLAG            0U
 #define ADC_CH9_FLAG            1U
@@ -61,6 +61,20 @@
 #define TEMP_DEC_FLAG           8U
 //PTD7 -Blower Switch
 #define BLOWER_SW_FLAG          7U
+
+//PTA2 -HPSW
+#define HPSW_FLAG               2U
+//PTA3 -LPSW
+#define LPSW_FLAG               3U
+
+
+#define Interrupt_DI            0x0
+#define Logic_0                 0x8
+#define Rising_Edge             0x9
+#define Falling_Edge            0xA
+#define Either_Edge             0xB
+#define Logic_1                 0xC
+
 
 typedef enum {
     BTN_TEMP_INC = 0,
@@ -79,6 +93,7 @@ typedef enum {
  void PINS_DRV_SetPins( GPIO_Type * const base , uint32_t pins);
  void PINS_DRV_TogglePins(GPIO_Type * const base , uint32_t pins);
  uint32_t PINS_DRV_ReadPins(GPIO_Type * const base);
+ void Interrupt_Init(void );
 
 
 #endif /* GPIO_H_ */
