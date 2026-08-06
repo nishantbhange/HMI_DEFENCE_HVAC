@@ -10,7 +10,7 @@
 #include "NVIC.h"
 
 volatile ADC_Readings_t ADC_Data ;
-volatile ADC_t ADC ;
+volatile ADC_Ctrl_t ADC_Ctrl ;
 
 bool ADC_Init(){
 	NVIC_SetPriority(PORTC_IRQn, 2);
@@ -60,7 +60,7 @@ bool ADC_Init(){
 		return false ;
 
 	}
-	ADC.ADC_State=ADC_FREE;
+	ADC_Ctrl.Status=ADC_FREE;
 	return true ;
 
 
@@ -69,9 +69,9 @@ bool ADC_Init(){
 
 bool ADC_Task(ADC_Channel_t ADC_Channel  ){
 
-	if(ADC.ADC_State==ADC_FREE){
+	if(ADC_Ctrl.Status==ADC_FREE){
 		IP_ADC0->SC1[0]=ADC_Channel;
-		ADC.ADC_State=ADC_BUSY;
+		ADC_Ctrl.Status=ADC_BUSY;
 		return true ;
 
 	}

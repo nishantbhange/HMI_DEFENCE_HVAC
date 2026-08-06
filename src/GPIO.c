@@ -124,26 +124,26 @@ void ADC0_IRQHandler(void){
 			//modify this value later !!!
 
 			ADC_Data.ADC_Condenser_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-			ADC.ADC_State=ADC_FREE;
+			ADC_Ctrl.Status=ADC_FREE;
 		IP_PORTC->ISFR|=(1<<ADC_CH8_FLAG);
 			}
 		 if((flags>>ADC_CH9_FLAG)&0x01U){
 			//modify this value later according to ct ratio and current ratings  !!!
 			ADC_Data.ADC_Compressor_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-			ADC.ADC_State=ADC_FREE;
+			ADC_Ctrl.Status=ADC_FREE;
 		IP_PORTC->ISFR|=(1<<ADC_CH9_FLAG);
 
 			}
 		 if((flags>>ADC_CH15_FLAG)&0x01U){
 			//modify this value later according to ct ratio and current ratings  !!!
 							ADC_Data.ADC_Blower_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-							ADC.ADC_State=ADC_FREE;
+							ADC_Ctrl.Status=ADC_FREE;
 	   IP_PORTC->ISFR|=(1<<ADC_CH15_FLAG);
 				}
 		 if((flags>>ADC_CH12_FLAG)&0x01U){
 
 							V_Temp=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-							ADC.ADC_State=ADC_FREE;
+							ADC_Ctrl.Status=ADC_FREE;
 							if(V_Temp>=VREF-0.001f || (V_Temp <= 0.001f)){
 								//set adc error flag
 

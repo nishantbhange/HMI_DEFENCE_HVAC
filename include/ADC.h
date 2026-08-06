@@ -59,13 +59,12 @@ typedef enum{
 ADC_FREE,
 ADC_BUSY
 
-}ADC_State;
+}ADC_Status_t;
 
 typedef struct {
-uint8_t ADC_State;
+ADC_Status_t Status;
 
-
-}ADC_t;
+}ADC_Ctrl_t;
 
 typedef struct{
 float Temp_Sensor_Val;
@@ -76,7 +75,7 @@ float ADC_Blower_Val;
 }ADC_Readings_t;
 
 extern volatile ADC_Readings_t ADC_Data ;
-extern volatile ADC_t ADC ;
+extern volatile ADC_Ctrl_t ADC_Ctrl ;
 
 bool ADC_Init(void);
 bool ADC_Task(ADC_Channel_t ADC_Channel  );
