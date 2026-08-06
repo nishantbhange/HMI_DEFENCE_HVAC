@@ -13,7 +13,7 @@ static void Load_counter(uint32_t Load_Value);
 void LPIT_Init(void){
 	IP_LPIT0->MCR=(1<<LPIT0_MCR_BIT_DBG_EN)|
 			      (1<<LPIT0_MCR_BIT_M_CEN);
-	IP_LPIT0->MIER=(1<<LPIT0_MIER_BIT_TIE0);
+	//IP_LPIT0->MIER=(1<<LPIT0_MIER_BIT_TIE0);
 	IP_LPIT0->TMR[0].TCTRL =(1<<LPIT0_TCTRL0_BIT_TSOI)|
 							 (1<<LPIT0_TCTRL0_BIT_TRG_SRC);
 }
@@ -29,7 +29,13 @@ void DelayUs(uint32_t us){
 if(us> LPIT_MAX_DELAY_US || us==0){
 	return ;
 }
-	uint32_t Load_Value=(((uint32_t)(((uint64_t)SCG_SIRC_DIV2_clock*us) / 1000000U)) - 1);
+uint32_t Ticks = (uint32_t)(((uint64_t)SCG_SIRC_DIV2_clock * us) / 1000000U);
+   if(Ticks == 0){
+       Ticks = 1;
+   }
+
+   uint32_t Load_Value = Ticks - 1;
+
 	Load_counter(Load_Value);
 	while(!(IP_LPIT0->MSR & 0x01)){
 

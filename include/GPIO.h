@@ -19,6 +19,7 @@
 #define LCD_PIN_RW   1U
 #define LCD_PIN_EN   2U
 #define DEBOUNCE_MS 20U
+#define LONG_PRESS_MS 4000U
 
 #define LCD_PIN_DB0   3U
 #define LCD_PIN_DB1   4U

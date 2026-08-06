@@ -105,7 +105,7 @@ VTABLE:
 .long undefined_handler
 .long undefined_handler
 .long undefined_handler
-.long undefined_handler 
+.long ADC0_IRQHandler
 .long undefined_handler /*40*/
 .long undefined_handler
 .long undefined_handler
@@ -125,11 +125,11 @@ VTABLE:
 .long undefined_handler
 .long undefined_handler
 .long undefined_handler
-.long undefined_handler
-.long undefined_handler /*60*/
-.long undefined_handler
-.long undefined_handler
-.long undefined_handler
+.long PORTA_IRQHandler
+.long PORTB_IRQHandler /*60*/
+.long PORTC_IRQHandler
+.long PORTD_IRQHandler
+.long PORTE_IRQHandler
 .long undefined_handler 
 .long undefined_handler
 .long undefined_handler

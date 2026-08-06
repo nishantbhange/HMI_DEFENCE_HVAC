@@ -111,6 +111,73 @@ static bool Debounce_Check(Button_Id_t id) {
     }
     return false;
 }
+//in s32k144 using RTD,  interrupts are delivered through INTctrl , startup file belongs to INTctrl
+//these handlers function pointer is modified in startup file so make sure to change vector table
+
+void ADC0_IRQHandler(void){
+	//PTC0 -ADC channel 8
+		//PTC1 -ADC channel 9
+		//PTC17 -ADC channel 15
+		//PTC15 -ADC channel 12
+		uint32_t flags =IP_PORTC->ISFR;
+		if((flags>>ADC_CH8_FLAG)&0x01U){
+			//modify this value later !!!
+
+			ADC_Data.ADC_Condenser_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
+			ADC.ADC_State=ADC_FREE;
+		IP_PORTC->ISFR|=(1<<ADC_CH8_FLAG);
+			}
+		 if((flags>>ADC_CH9_FLAG)&0x01U){
+			//modify this value later according to ct ratio and current ratings  !!!
+			ADC_Data.ADC_Compressor_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
+			ADC.ADC_State=ADC_FREE;
+		IP_PORTC->ISFR|=(1<<ADC_CH9_FLAG);
+
+			}
+		 if((flags>>ADC_CH15_FLAG)&0x01U){
+			//modify this value later according to ct ratio and current ratings  !!!
+							ADC_Data.ADC_Blower_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
+							ADC.ADC_State=ADC_FREE;
+	   IP_PORTC->ISFR|=(1<<ADC_CH15_FLAG);
+				}
+		 if((flags>>ADC_CH12_FLAG)&0x01U){
+
+							V_Temp=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
+							ADC.ADC_State=ADC_FREE;
+							if(V_Temp>=VREF-0.001f || (V_Temp <= 0.001f)){
+								//set adc error flag
+
+								 Event=Event_Error;
+								 Current_Error=Error_Event_ADC;
+	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
+								 return;
+							}
+			                R_Temp=(V_Temp*Rfixed)/(VREF-V_Temp);
+			                if(R_Temp<=0){
+
+			                	Event=Event_Error;
+			                	Current_Error=Error_Event_ADC;
+	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
+			                	return;
+			                }
+						    Temp_k=(T0*Beta)/(Beta+T0*logf(R_Temp/R0));
+						    if((Temp_k < 233.15f) || (Temp_k > 423.15f)){
+
+						    	Event=Event_Error;
+						        Current_Error=Error_Event_ADC;
+	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
+						    	return ;
+						    }
+
+							ADC_Data.Temp_Sensor_Val=(Temp_k-273.15f);
+
+
+	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
+				            }
+
+
+}
+
 
 void PORTA_IRQHandler(void){
 	uint32_t flags =IP_PORTA->ISFR;
@@ -188,7 +255,7 @@ if((flags>>PWR_FLAG)&0x01U){
 							IP_PORTB->ISFR|=(1<<PWR_FLAG);
 							return;
 						}
-		                  if((Global_Tick_Count-Press_Start_Tick)>=4000){
+		                  if((Global_Tick_Count-Press_Start_Tick)>=LONG_PRESS_MS){
 		                	  //long press detected !! change current mode .
 		                	  Event=Event_Mode;
 		                  }
@@ -208,27 +275,12 @@ if((flags>>PWR_FLAG)&0x01U){
 
 }
 void PORTC_IRQHandler(void){
-	//PTC0 -ADC channel 8
-	//PTC1 -ADC channel 9
+
 	//PTC2 -compressor switch
 	//PTC3 -Heater Switch
-	//PTC17 -ADC channel 15
-	//PTC15 -ADC channel 12
+
 	uint32_t flags =IP_PORTC->ISFR;
-	if((flags>>ADC_CH8_FLAG)&0x01U){
-		//modify this value later !!!
 
-		ADC_Data.ADC_Condenser_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-		ADC.ADC_State=ADC_FREE;
-	IP_PORTC->ISFR|=(1<<ADC_CH8_FLAG);
-		}
-	 if((flags>>ADC_CH9_FLAG)&0x01U){
-		//modify this value later according to ct ratio and current ratings  !!!
-		ADC_Data.ADC_Compressor_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-		ADC.ADC_State=ADC_FREE;
-	IP_PORTC->ISFR|=(1<<ADC_CH9_FLAG);
-
-		}
 	 if((flags>>COMPRESSOR_SW_FLAG)&0x01U){
 		 if(Debounce_Check(BTN_COMPRESSOR_SW)){
 					Event=Event_User_Compressor;
@@ -243,46 +295,6 @@ void PORTC_IRQHandler(void){
    IP_PORTC->ISFR|=(1<<HEATER_SW_FLAG);
 
 			}
-	 if((flags>>ADC_CH15_FLAG)&0x01U){
-		//modify this value later according to ct ratio and current ratings  !!!
-						ADC_Data.ADC_Blower_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-						ADC.ADC_State=ADC_FREE;
-   IP_PORTC->ISFR|=(1<<ADC_CH15_FLAG);
-			}
-	 if((flags>>ADC_CH12_FLAG)&0x01U){
-
-						V_Temp=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-						ADC.ADC_State=ADC_FREE;
-						if(V_Temp>=VREF-0.001f || (V_Temp <= 0.001f)){
-							//set adc error flag
-
-							 Event=Event_Error;
-							 Current_Error=Error_Event_ADC;
-  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-							 return;
-						}
-		                R_Temp=(V_Temp*Rfixed)/(VREF-V_Temp);
-		                if(R_Temp<=0){
-
-		                	Event=Event_Error;
-		                	Current_Error=Error_Event_ADC;
-  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-		                	return;
-		                }
-					    Temp_k=(T0*Beta)/(Beta+T0*logf(R_Temp/R0));
-					    if((Temp_k < 233.15f) || (Temp_k > 423.15f)){
-
-					    	Event=Event_Error;
-					        Current_Error=Error_Event_ADC;
-  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-					    	return ;
-					    }
-
-						ADC_Data.Temp_Sensor_Val=(Temp_k-273.15f);
-
-
-  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-			            }
 
 }
 void PORTD_IRQHandler(void){

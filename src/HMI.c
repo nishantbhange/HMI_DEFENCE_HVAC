@@ -10,7 +10,8 @@
 #include<ADC.h>
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
- static uint32_t Systick_Tick_Count =0;
+ static uint32_t Systick_Tick_Count=0;
+ static uint32_t Systick_Tick_Count_User_State=0;
  static uint8_t Prev_Mode=(Mode_t)0xFF;
  static uint8_t Prev_Set_Temp=0xFF;
  static uint8_t Prev_Curr_Temp=0xFF;
@@ -22,8 +23,8 @@
 
 
 
- void HMI_Process_Event(HMI_Event_t Event ){
-	switch(Event){
+ void HMI_Process_Event(HMI_Event_t CurrEvent ){
+	switch(CurrEvent){
 
 	    case Event_Machine_status :
 
@@ -158,21 +159,22 @@
 		}
 
 		//compressor turns on after 3 mins
-		if(HMI->compressor_state==Compressor_off ){
 
-		Relay_Cntrl(Compressor,Compressor_off);
-		Led_Cntrl(Compressor,Compressor_off);
-
-
-
-		}
-		else if(HMI->compressor_state==Compressor_on)
+		if(HMI->compressor_state==Compressor_on)
 		{
 		Relay_Cntrl(Compressor,Compressor_on);
 		Led_Cntrl(Compressor,Compressor_on);
 
 		Relay_Cntrl(Heater,Heater_off);
 		Led_Cntrl(Heater,Heater_off);
+
+		}
+		else{
+
+		Relay_Cntrl(Compressor,Compressor_off);
+		Led_Cntrl(Compressor,Compressor_off);
+
+
 
 		}
 
@@ -541,11 +543,11 @@ void SysTick_Handler(void){
 	}
 
 	else if(HMI.user_compressor_state==Compressor_off){
-		Systick_Tick_Count++;
-		if(Systick_Tick_Count>=COMPRESSOR_DELAY_MS){
+		Systick_Tick_Count_User_State++;
+		if(Systick_Tick_Count_User_State>=COMPRESSOR_DELAY_MS){
 
 				HMI.compressor_state=Compressor_off;
-			Systick_Tick_Count=0U;
+				Systick_Tick_Count_User_State=0U;
 
 		}
 		}

@@ -69,9 +69,9 @@ uint8_t ADC_State;
 
 typedef struct{
 float Temp_Sensor_Val;
-uint8_t ADC_Condenser_Val;
-uint8_t ADC_Compressor_Val;
-uint8_t ADC_Blower_Val;
+float ADC_Condenser_Val;
+float ADC_Compressor_Val;
+float ADC_Blower_Val;
 
 }ADC_Readings_t;
 
