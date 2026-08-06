@@ -10,9 +10,37 @@
 
 #include "S32K144.h"
 #include <stdint.h>
-#include "Delay.h"
-#include "GPIO.h"
-#define LCD_PORT IP_PTC
+
+
+
+typedef struct {
+    GPIO_Type * const base;
+    const uint32_t pin;
+} LCD_Pin_t;
+
+
+//L1-rs-PTC5
+//L2-Enable-PTE1
+//L3-D0-PTA11
+//L4-D1-PTA12
+//L5-D2-PTA13
+//L6-D3-PTE2
+//L7-D4-PTE6
+//L8-D5-PTC6
+//L9-D6-PTC7
+//L10-D7-PTA0
+#define LCD_RS  ((LCD_Pin_t){ IP_PTC, 5U })
+#define LCD_EN  ((LCD_Pin_t){ IP_PTE, 1U })
+#define LCD_D0  ((LCD_Pin_t){ IP_PTA, 11U })
+#define LCD_D1  ((LCD_Pin_t){ IP_PTA, 12U })
+#define LCD_D2  ((LCD_Pin_t){ IP_PTA, 13U })
+#define LCD_D3  ((LCD_Pin_t){ IP_PTE, 2U })
+#define LCD_D4  ((LCD_Pin_t){ IP_PTE, 6U })
+#define LCD_D5  ((LCD_Pin_t){ IP_PTC, 6U })
+#define LCD_D6  ((LCD_Pin_t){ IP_PTC, 7U })
+#define LCD_D7  ((LCD_Pin_t){ IP_PTA, 0U })
+
+
 
 #define LCDON_CURSOROFF        0x0F
 #define CLEAR_DISPLAY          0x01

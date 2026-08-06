@@ -30,8 +30,14 @@
 
 /* Including necessary configuration files. */
 #include "Mcal.h"
+#include<stdint.h>
+#include"HMI.h"
+#include"GPIO.h"
+#include"ADC.h"
+#include"LCD.h"
+#include"EEPROM.h"
+#include"Delay.h"
 
-volatile int exit_code = 0;
 /* User includes */
 
 /*!
@@ -43,15 +49,18 @@ volatile int exit_code = 0;
 int main(void)
 {
     /* Write your code here */
-//set BLC PIN high
+   //set BLC PIN high
+	//ADC init
+	//LCD init
+	//EEPROM init
+	//HMI INIT
+	//systick init
+	//interrupt init
     for(;;)
     {
-        if(exit_code != 0)
-        {
-            break;
-        }
+
     }
-    return exit_code;
+    return 0;
 }
 
 /** @} */

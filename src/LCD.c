@@ -1,7 +1,10 @@
 
 #include"LCD.h"
+#include "Delay.h"
+#include "GPIO.h"
 
-
+static void LCD_Write_Pin(LCD_Pin_t p, bool level);
+static void LCD_Write_Data(char data);
 
 //#include <pins_driver.h>
 //#include <pin_mux.h>
@@ -24,7 +27,7 @@ void LCD_Init(void ){
 }
 void LCD_String_XY(char row ,char position ,const char* msg){
 	 char location=0;
-	    if(row==1)
+	    if(row==0)
 	    {
 	    	//Print message on 1st row and desired location
 	        location=(0x80) | ((position) & 0x0f);
@@ -56,40 +59,38 @@ void LCD_String(const char *msg)
 
     	}
 }
+static void LCD_Write_Pin(LCD_Pin_t p, bool level){
+    if(level) PINS_DRV_SetPins(p.base, 1U << p.pin);
+    else      PINS_DRV_ClearPins(p.base, 1U << p.pin);
+}
+static void LCD_Write_Data(char data){
+    const LCD_Pin_t d[8] = {LCD_D0,LCD_D1,LCD_D2,LCD_D3,LCD_D4,LCD_D5,LCD_D6,LCD_D7};
+    for(int i = 0; i < 8; i++){
+        LCD_Write_Pin(d[i], (data >> i) & 0x01);
+    }
+}
 
-void LCD_Command(char cmd ){
-
-PINS_DRV_ClearPins(LCD_PORT , 0xFF);
-PINS_DRV_SetPins(LCD_PORT,(uint8_t)cmd);
-// RS=0 for sending command
-PINS_DRV_ClearPins(LCD_PORT, 1 << LCD_PIN_RS);
-// RW=0
-PINS_DRV_ClearPins(LCD_PORT, 1 << LCD_PIN_RW);
-// High to low pulse
-PINS_DRV_SetPins(LCD_PORT, 1 << LCD_PIN_EN);
-DelayMs(1);
-PINS_DRV_ClearPins(LCD_PORT, 1 << LCD_PIN_EN);
-
-
-
+void LCD_Command(char cmd){
+    LCD_Write_Data(cmd);
+    LCD_Write_Pin(LCD_RS, 0);
+    LCD_Write_Pin(LCD_EN, 1);
+    DelayMs(1);
+    LCD_Write_Pin(LCD_EN, 0);
 }
 
 void LCD_Char(char dat)
 {
 	//Send data to LCD
-	PINS_DRV_ClearPins(LCD_PORT , 0xFF);
-	PINS_DRV_SetPins(LCD_PORT,(uint8_t)dat);
-
+	 LCD_Write_Data(dat);
 	//RS = 1 Data Register is selected
-
-	PINS_DRV_SetPins(LCD_PORT, 1 << LCD_PIN_RS);
+	 LCD_Write_Pin(LCD_RS, 1);
 	// High-to-Low pulse on Enable pin to latch data
 	//EN=1;
-	PINS_DRV_SetPins(LCD_PORT, 1 << LCD_PIN_EN);
+	 LCD_Write_Pin(LCD_EN, 1);
 	//MSdelay(1);
 	DelayMs(1);
 	//EN=0;
-	PINS_DRV_ClearPins(LCD_PORT, 1 << LCD_PIN_EN);
+	LCD_Write_Pin(LCD_EN, 0);
 
 }
 

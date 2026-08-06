@@ -43,7 +43,8 @@ src/HMI.o: ../src/HMI.c \
  C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/LCD.h \
  C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/Delay.h \
  C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/EEPROM.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/HMI.h
+ C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/HMI.h \
+ C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/ADC.h
 C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/HMI.h:
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144.h:
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_ADC.h:
@@ -89,3 +90,4 @@ C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/LCD.h:
 C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/Delay.h:
 C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/EEPROM.h:
 C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/HMI.h:
+C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/ADC.h:

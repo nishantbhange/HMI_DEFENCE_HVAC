@@ -7,6 +7,7 @@
 #include"HMI.h"
 #include"EEPROM.h"
 #include<stdbool.h>
+#include<ADC.h>
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
  static uint32_t Systick_Tick_Count =0;
@@ -17,6 +18,7 @@
  volatile HMI_Event_t Event;
  volatile ErrorCode_t Current_Error;
  static Compressor_t Prev_Compressor_State;
+ int comp_ct_val=0;
 
 
 
@@ -105,12 +107,17 @@
 			 	 	        break;
 	 case Event_Error :
 
-		 //turn off compressor call error handler and do troubleshooting steps push error logs into eeprom !!
-		 //push error flags into EEprom too
-		   HMI.error_flag=error_flag_set;
-		   EEPROM.Error_Present=HMI.error_flag;
-		   EEPROM.ErrorCode=Current_Error;
+		                   //turn off compressor call error handler and do troubleshooting steps push error logs into eeprom !!
+		                   //push error flags into EEprom too
+		                   HMI.error_flag=error_flag_set;
+		                   EEPROM.Error_Present=HMI.error_flag;
+		                   EEPROM.ErrorCode=Current_Error;
 			 	 	 	    break;
+	 case Event_Error_Clear :
+		                  HMI.error_flag=error_flag_reset;
+	                      EEPROM.Error_Present=HMI.error_flag;
+
+		                    break;
 	 default:
 		                    break ;
 
@@ -335,7 +342,10 @@
 }
 
  void HMI_Init(HMI_t *HMI ){
-	if(!EEPROM_Is_Valid(&EEPROM)){
+	 // pull whatever is currently in FlexRAM
+	EEPROM_Read(&First_EEPROM_Data);
+	if(!EEPROM_Is_Valid(&First_EEPROM_Data)){
+     // first-ever boot  - set defaults
 
     HMI->set_temp=25.00f;
     HMI->user_compressor_state=Compressor_on;
@@ -348,10 +358,23 @@
     HMI->vent_state=Vent_off;
     HMI->Blower_state=Blower_on;
     HMI->error_flag=error_flag_reset;
+
+    // push defaults into the RAM shadow
+    EEPROM.Magic_No = MAGIC_NO;
+    EEPROM.Set_Temp = HMI->set_temp;
+    EEPROM.AC_State = HMI->status;
+    EEPROM.Curr_Mode = HMI->mode;
+    EEPROM.Condenser_state = HMI->condenser_state;
+    EEPROM.User_Compressor_state = HMI->user_compressor_state;
+    EEPROM.Curr_Temp = HMI->curr_temp;
+    EEPROM.heater_state = HMI->heater_state;
+    EEPROM.vent_state = HMI->vent_state;
+    EEPROM.Error_Present = HMI->error_flag;
+    EEPROM_Write(&EEPROM);
     }
 	else{
 	//these variables must be restored from eeprom !!
-	EEPROM_Read(&First_EEPROM_Data);
+
     HMI->set_temp=First_EEPROM_Data.Set_Temp;
 	HMI->status=First_EEPROM_Data.AC_State;
 	HMI->mode=First_EEPROM_Data.Curr_Mode;
@@ -361,6 +384,8 @@
     HMI->heater_state=First_EEPROM_Data.heater_state;
     HMI->vent_state=First_EEPROM_Data.vent_state;
     HMI->error_flag=First_EEPROM_Data.Error_Present;
+
+    EEPROM = First_EEPROM_Data;
 
 	}
 
@@ -397,10 +422,10 @@ void Relay_Cntrl( Part_t part,bool Enable){
 
 	case Blower :
 		if(Enable){
-			PINS_DRV_SetPins(IP_PTA , 1U<<6);
+			PINS_DRV_SetPins(IP_PTA , 1U<<7);
 		}
 		else{
-			PINS_DRV_ClearPins(IP_PTA , 1U<<6);
+			PINS_DRV_ClearPins(IP_PTA , 1U<<7);
 		}
 	break ;
 
@@ -415,10 +440,10 @@ void Relay_Cntrl( Part_t part,bool Enable){
 
 	case Solenoid_Valve :
 		if(Enable){
-			PINS_DRV_SetPins(IP_PTB , 1U<<9);
+			PINS_DRV_SetPins(IP_PTB , 1U<<1);
 		}
 		else{
-			PINS_DRV_ClearPins(IP_PTB , 1U<<9);
+			PINS_DRV_ClearPins(IP_PTB , 1U<<1);
 		}
 	break ;
 
@@ -599,6 +624,7 @@ else if(Error_Set_Reset==Error_Reset){
 }
 
 
+
 }
 void HPSW_Error_Handler(bool Error_Set_Reset){
 	const char* Error_String="HPSW ERROR";
@@ -627,8 +653,8 @@ else if(Error_Set_Reset==Error_Reset){
 		Update_Display(HMI);
 	}
 
-}
 
+}
 
 }
 void ADC_Error_Handler(bool Error_Set_Reset ){
@@ -639,5 +665,22 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 			LCD_String_XY(0, 4, Error_String);
           }
 	}
+	Event=Event_Error_Clear;
+	Current_Error=Error_ADC_Clear;
+}
+void Check_States(void){
+  comp_ct_val=ADC_Data.ADC_Compressor_Val;
+if(comp_ct_val>=COMPRESSOR_CT_VAl_120x && comp_ct_val<COMPRESSOR_CT_VAl_150x){
+//wait for 10 mins before switching off compressor
+
+}
+else if(comp_ct_val>=COMPRESSOR_CT_VAl_150x && comp_ct_val<COMPRESSOR_CT_VAl_200x){
+//wait for 3 mins before switching off compressor
+
+}
+else if(comp_ct_val>=COMPRESSOR_CT_VAl_200x){
+//wait for 1 min before switching off compressor
+
+}
 
 }

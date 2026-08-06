@@ -80,18 +80,20 @@ static bool Is_Pressed=0;
 	  //PTA2 -HPSW
 	  //PTA3 -LPSW
 	  IP_PORTA->PCR[2] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
-	  IP_PORTA->PCR[2] |= PORT_PCR_IRQC(Rising_Edge);
+	  IP_PORTA->PCR[2] |= PORT_PCR_IRQC(Either_Edge);
 
 
 	  IP_PORTA->PCR[3] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
-	  IP_PORTA->PCR[3] |= PORT_PCR_IRQC(Rising_Edge);
-	  NVIC_SetPriority(PORTA_IRQn, 2);
+	  IP_PORTA->PCR[3] |= PORT_PCR_IRQC(Either_Edge);
+	  NVIC_SetPriority(PORTA_IRQn, 1);
 	  NVIC_EnableIRQ(PORTA_IRQn);
 
 
 	  //PTD7-blower
 	  IP_PORTD->PCR[7] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	  IP_PORTD->PCR[7] |= PORT_PCR_IRQC(Rising_Edge);
+	  NVIC_SetPriority(PORTE_IRQn, 2);
+	  NVIC_EnableIRQ(PORTE_IRQn);
 
       //PTE8-temp--
 	  IP_PORTE->PCR[8] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
@@ -131,9 +133,8 @@ void PORTA_IRQHandler(void){
 
 			         }
 			 IP_PORTA->ISFR|=(1<<HPSW_FLAG);
+
 			}
-
-
 	//PTA3 -LPSW
 	if((flags>>LPSW_FLAG)&0x01U){
 		//LPSW interrupt handler set the error flag
@@ -154,10 +155,7 @@ void PORTA_IRQHandler(void){
 			IP_PORTA->ISFR|=(1<<LPSW_FLAG);
 
 		}
-
-
 }
-
 
 void PORTB_IRQHandler(void){
 	//PTB5 temp++
@@ -187,6 +185,7 @@ if((flags>>PWR_FLAG)&0x01U){
 				else{
 					if(Debounce_Check(BTN_PWR)){
 						if(Press_Start_Tick==0){
+							IP_PORTB->ISFR|=(1<<PWR_FLAG);
 							return;
 						}
 		                  if((Global_Tick_Count-Press_Start_Tick)>=4000){
@@ -259,6 +258,7 @@ void PORTC_IRQHandler(void){
 
 							 Event=Event_Error;
 							 Current_Error=Error_Event_ADC;
+  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
 							 return;
 						}
 		                R_Temp=(V_Temp*Rfixed)/(VREF-V_Temp);
@@ -266,6 +266,7 @@ void PORTC_IRQHandler(void){
 
 		                	Event=Event_Error;
 		                	Current_Error=Error_Event_ADC;
+  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
 		                	return;
 		                }
 					    Temp_k=(T0*Beta)/(Beta+T0*logf(R_Temp/R0));
@@ -273,6 +274,7 @@ void PORTC_IRQHandler(void){
 
 					    	Event=Event_Error;
 					        Current_Error=Error_Event_ADC;
+  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
 					    	return ;
 					    }
 
