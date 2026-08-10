@@ -76,9 +76,15 @@ float ADC_Blower_Val;
 
 extern volatile ADC_Readings_t ADC_Data ;
 extern volatile ADC_Ctrl_t ADC_Ctrl ;
+extern ADC_Channel_t Current_ADC_Channel;
 
 bool ADC_Init(void);
 bool ADC_Task(ADC_Channel_t ADC_Channel  );
+
+
+#define ADC_CHANNEL_COUNT 4U
+
+
 
 
 #endif /* ADC_H_ */

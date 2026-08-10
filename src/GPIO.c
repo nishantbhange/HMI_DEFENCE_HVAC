@@ -19,6 +19,8 @@ static bool Is_Pressed=0;
 #define T0          298.15f
 #define Beta        3470.0f
 
+
+
  void PINS_DRV_ClearPins(GPIO_Type * const base, uint32_t pins)
 {
 	base->PCOR=pins;
@@ -115,66 +117,60 @@ static bool Debounce_Check(Button_Id_t id) {
 //these handlers function pointer is modified in startup file so make sure to change vector table
 
 void ADC0_IRQHandler(void){
-	//PTC0 -ADC channel 8
+	    //PTC0 -ADC channel 8
 		//PTC1 -ADC channel 9
 		//PTC17 -ADC channel 15
 		//PTC15 -ADC channel 12
-		uint32_t flags =IP_PORTC->ISFR;
-		if((flags>>ADC_CH8_FLAG)&0x01U){
-			//modify this value later !!!
 
-			ADC_Data.ADC_Condenser_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-			ADC_Ctrl.Status=ADC_FREE;
-		IP_PORTC->ISFR|=(1<<ADC_CH8_FLAG);
-			}
-		 if((flags>>ADC_CH9_FLAG)&0x01U){
-			//modify this value later according to ct ratio and current ratings  !!!
-			ADC_Data.ADC_Compressor_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-			ADC_Ctrl.Status=ADC_FREE;
-		IP_PORTC->ISFR|=(1<<ADC_CH9_FLAG);
+		 if((IP_ADC0->SC1[0] & ADC_SC1_COCO_MASK) == 0){
+		        return;   //conversion not actually done
+		    }
 
-			}
-		 if((flags>>ADC_CH15_FLAG)&0x01U){
-			//modify this value later according to ct ratio and current ratings  !!!
-							ADC_Data.ADC_Blower_Val=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-							ADC_Ctrl.Status=ADC_FREE;
-	   IP_PORTC->ISFR|=(1<<ADC_CH15_FLAG);
-				}
-		 if((flags>>ADC_CH12_FLAG)&0x01U){
+		    float raw_voltage = ((float)IP_ADC0->R[0] * VREF) / ADC_MAX;
 
-							V_Temp=(((float)IP_ADC0->R[0] * VREF)/(ADC_MAX));
-							ADC_Ctrl.Status=ADC_FREE;
-							if(V_Temp>=VREF-0.001f || (V_Temp <= 0.001f)){
-								//set adc error flag
+		    switch(Current_ADC_Channel){
+		        case ADC_CONDENSER_CT:
+		            ADC_Data.ADC_Condenser_Val = raw_voltage;
+		            break;
+		        case ADC_COMPRESSOR_CT:
+		            ADC_Data.ADC_Compressor_Val = raw_voltage;
+		            break;
+		        case ADC_BLOWER_CT:
+		            ADC_Data.ADC_Blower_Val = raw_voltage;
+		            break;
+		        case ADC_TEMP_SENSOR:
+		            V_Temp = raw_voltage;
+		            if(V_Temp >= VREF-0.001f || V_Temp <= 0.001f){
+		                Event = Event_Error;
+		                Current_Error = Error_Event_ADC;
+		                break;
+		            }
+		            R_Temp = (V_Temp * Rfixed) / (VREF - V_Temp);
+		            if(R_Temp <= 0){
+		                Event = Event_Error;
+		                Current_Error = Error_Event_ADC;
+		                break;
+		            }
 
-								 Event=Event_Error;
-								 Current_Error=Error_Event_ADC;
-	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-								 return;
-							}
-			                R_Temp=(V_Temp*Rfixed)/(VREF-V_Temp);
-			                if(R_Temp<=0){
+		            Temp_k = (T0 * Beta) / (Beta + T0 * logf(R_Temp / R0));
+		            if(Temp_k < 233.15f || Temp_k > 423.15f){
+		                Event = Event_Error;
+		                Current_Error = Error_Event_ADC;
+		                break;
+		            }
+		            ADC_Data.Temp_Sensor_Val = Temp_k - 273.15f;
 
-			                	Event=Event_Error;
-			                	Current_Error=Error_Event_ADC;
-	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-			                	return;
-			                }
-						    Temp_k=(T0*Beta)/(Beta+T0*logf(R_Temp/R0));
-						    if((Temp_k < 233.15f) || (Temp_k > 423.15f)){
+		            if(HMI.error_flag == error_flag_set && HMI.Display_Error_Code == Error_Event_ADC){
+		                Event = Event_Error_Clear;
+		                Current_Error = Error_ADC_Clear;
+		            }
+		            break;
 
-						    	Event=Event_Error;
-						        Current_Error=Error_Event_ADC;
-	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-						    	return ;
-						    }
+		        default:
+		            break;
+		    }
 
-							ADC_Data.Temp_Sensor_Val=(Temp_k-273.15f);
-
-
-	  IP_PORTC->ISFR|=(1<<ADC_CH12_FLAG);
-				            }
-
+		    ADC_Ctrl.Status = ADC_FREE;
 
 }
 

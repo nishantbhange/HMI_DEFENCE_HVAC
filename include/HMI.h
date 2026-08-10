@@ -113,6 +113,7 @@ typedef struct{
 	Heater_t                heater_state;
 	Vent_t                  vent_state;
 	error_flag_t            error_flag;
+	ErrorCode_t             Display_Error_Code;
 
 }HMI_t;
 

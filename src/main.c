@@ -36,15 +36,14 @@
 
 #define EEPROM_WRITE_QUIET_PERIOD_MS   5000U
 
+
+static uint8_t ADC_Channel_Index = 0U;
 static const ADC_Channel_t ADC_Channel_Sequence[] = {
     ADC_TEMP_SENSOR,
     ADC_COMPRESSOR_CT,
     ADC_CONDENSER_CT,
     ADC_BLOWER_CT
 };
-
-#define ADC_CHANNEL_COUNT 4U
-static uint8_t ADC_Channel_Index = 0U;
 
 static EEPROM_Data_t EEPROM_Last_Written;
 static bool     EEPROM_Dirty        = false;
@@ -118,6 +117,7 @@ static void Process_Pending_Event(void)
     if(Event==Event_Error || Event==Event_Error_Clear)
     {
         Error_Handler();
+        HMI_Process_Event(Event);
     }
     else
     {

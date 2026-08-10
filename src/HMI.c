@@ -15,6 +15,7 @@
  static uint32_t Systick_Tick_Count_User_State=0;
  static uint8_t Prev_Mode=(Mode_t)0xFF;
  static uint8_t Prev_Set_Temp=0xFF;
+ static ErrorCode_t Prev_Display_Error_Code = 0xFF;
  static uint8_t Prev_Curr_Temp=0xFF;
  EEPROM_Data_t First_EEPROM_Data;
  volatile HMI_Event_t Event;
@@ -310,6 +311,7 @@
 }
 
  void Update_Display(HMI_t HMI){
+	 if(HMI.error_flag!=error_flag_set){
 	const char* Display_Mode;
 
 
@@ -344,6 +346,32 @@
 	Prev_Curr_Temp=HMI.curr_temp;
 
    }
+	 }
+	 else{
+
+		 char *Error_Code;
+		 switch(HMI.Display_Error_Code){
+		 case Error_Event_LPSW :
+			Error_Code="LPSW_ERROR";
+			break ;
+		 case Error_Event_HPSW :
+			Error_Code="HPSW_ERROR";
+			break ;
+		 case Error_Event_ADC :
+			Error_Code="ADC_ERROR";
+			break ;
+		 default :
+		    break;
+		      }
+
+		 if(HMI.Display_Error_Code != Prev_Display_Error_Code){
+		    LCD_Clear();
+		    LCD_String_XY(0, 0, "ERROR");
+		    LCD_String_XY(1, 0, Error_Code);
+		    Prev_Display_Error_Code = HMI.Display_Error_Code;
+		     }
+
+	 }
 
 
 }
@@ -576,6 +604,7 @@ if(Event==Event_Error){
        break ;
 
       default:
+    	  //if any extra error could be there implement it
     	  break ;
 	}
 
@@ -602,76 +631,51 @@ else if(Event==Event_Error_Clear){
 
 }
 void LPSW_Error_Handler(bool Error_Set_Reset ){
-	const char* Error_String="LPSW ERROR";
 if(Error_Set_Reset==Error_Set){
 	Prev_Compressor_State=HMI.compressor_state;
-	if(HMI.compressor_state!=Compressor_off)
-	{
-		HMI.compressor_state=Compressor_off;
-	}
-	LCD_Clear();
-	while(Current_Error!=Error_LPSW_Clear){
-
-		LCD_String_XY(0, 4, Error_String);
-
-	}
+	HMI.error_flag = error_flag_set;
+    HMI.Display_Error_Code=Error_Event_LPSW;
 }
 else if(Error_Set_Reset==Error_Reset){
-
-	if(Prev_Compressor_State==Compressor_on){
+	HMI.error_flag = error_flag_reset;
+     if(Prev_Compressor_State==Compressor_on){
 		HMI.compressor_state=Compressor_wait_to_on;
 	}
 	else{
 		HMI.compressor_state=Prev_Compressor_State;
-		Update_Display(HMI);
 	}
-
 }
-
-
+Update_Display(HMI);
 
 }
 void HPSW_Error_Handler(bool Error_Set_Reset){
-	const char* Error_String="HPSW ERROR";
 if(Error_Set_Reset==Error_Set){
 	Prev_Compressor_State=HMI.compressor_state;
-	if(HMI.compressor_state!=Compressor_off)
-	{
-		HMI.compressor_state=Compressor_off;
-	}
-	LCD_Clear();
-	while(Current_Error!=Error_HPSW_Clear){
-
-		LCD_String_XY(0, 4, Error_String);
-
-	}
-
-
+	HMI.error_flag = error_flag_set;
+	HMI.Display_Error_Code=Error_Event_HPSW;
 }
 else if(Error_Set_Reset==Error_Reset){
-
+	HMI.error_flag = error_flag_reset;
 	if(Prev_Compressor_State==Compressor_on){
 		HMI.compressor_state=Compressor_wait_to_on;
 	}
 	else{
 		HMI.compressor_state=Prev_Compressor_State;
-		Update_Display(HMI);
 	}
 
-
 }
-
+Update_Display(HMI);
 }
 void ADC_Error_Handler(bool Error_Set_Reset ){
-	const char* Error_String="ADC ERROR";
 	if(Error_Set_Reset==Error_Set){
-		LCD_Clear();
-			while(Current_Error!=Error_ADC_Clear){
-			LCD_String_XY(0, 4, Error_String);
-          }
+		HMI.error_flag = error_flag_set;
+		HMI.Display_Error_Code=Error_Event_ADC;
 	}
-	Event=Event_Error_Clear;
-	Current_Error=Error_ADC_Clear;
+	else if(Error_Set_Reset==Error_Reset){
+		HMI.error_flag = error_flag_reset;
+	}
+	Update_Display(HMI);
+
 }
 void Check_States(void){
   comp_ct_val=ADC_Data.ADC_Compressor_Val;
