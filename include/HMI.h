@@ -117,6 +117,7 @@ typedef struct{
 }HMI_t;
 
 typedef enum {
+	Event_NONE,
 	Event_Mode ,
 	Event_Increase_Temp,
 	Event_Decrease_Temp,
@@ -125,7 +126,8 @@ typedef enum {
 	Event_User_Compressor,
 	Event_Error ,
 	Event_Error_Clear,
-	Event_Machine_status ,
+	Event_Machine_status
+
 
 }HMI_Event_t;
 
@@ -153,6 +155,7 @@ void HMI_Init(HMI_t *HMI );
 void Relay_Cntrl( Part_t part,bool Enable);
 void Led_Cntrl( Part_t part,bool Enable);
 void Error_Handler( void  );
+void Update_Compressor_State(HMI_t *HMI);
 
 void LPSW_Error_Handler(bool Error_Set_Reset );
 void HPSW_Error_Handler(bool Error_Set_Reset );

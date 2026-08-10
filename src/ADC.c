@@ -51,7 +51,7 @@ bool ADC_Init(){
 	IP_ADC0->SC3 = ADC_SC3_CAL_MASK
 			      | ADC_SC3_AVGE_MASK /* AVGE = 1: Enable hardware average */
 	              | (ADC_HW_AVG_SAMPLE_32<<ADC_SC3_BIT_AVGS); /* AVGS = 11b: 32 samples averaged */
-	// Wait for completion
+	//Wait for completion
 	while(((IP_ADC0->SC1[0] & ADC_SC1_COCO_MASK)>>ADC_SC1_COCO_SHIFT) == 0);
       //check is calibration is fine
 	if (IP_ADC0->SC3 & ADC_SC3_CAL_MASK)
@@ -62,8 +62,6 @@ bool ADC_Init(){
 	}
 	ADC_Ctrl.Status=ADC_FREE;
 	return true ;
-
-
 }
 
 

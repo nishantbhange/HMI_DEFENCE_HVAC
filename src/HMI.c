@@ -8,6 +8,7 @@
 #include"EEPROM.h"
 #include<stdbool.h>
 #include<ADC.h>
+#include<string.h>
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
  static uint32_t Systick_Tick_Count=0;
@@ -24,6 +25,9 @@
 
 
  void HMI_Process_Event(HMI_Event_t CurrEvent ){
+	 if(CurrEvent==Event_NONE){
+		 return ;
+	 }
 	switch(CurrEvent){
 
 	    case Event_Machine_status :
@@ -277,6 +281,7 @@
 
 
 	}
+	Event=Event_NONE;
 }
 
  void Update_Compressor_State(HMI_t *HMI){
@@ -610,8 +615,6 @@ if(Error_Set_Reset==Error_Set){
 		LCD_String_XY(0, 4, Error_String);
 
 	}
-
-
 }
 else if(Error_Set_Reset==Error_Reset){
 
