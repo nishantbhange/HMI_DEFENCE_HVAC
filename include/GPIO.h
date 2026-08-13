@@ -51,12 +51,10 @@
 
 
 
-#define ADC_CH8_FLAG            0U
-#define ADC_CH9_FLAG            1U
+
 #define COMPRESSOR_SW_FLAG      2U
 #define HEATER_SW_FLAG          3U
-#define ADC_CH15_FLAG           17U
-#define ADC_CH12_FLAG           15U
+
 
 //PTE8 -Temp--
 #define TEMP_DEC_FLAG           8U

@@ -35,6 +35,7 @@
 #define SYSTICK_1MS_LOAD_VALUE   (CoreClockHz / 1000U - 1U)
 
 #define EEPROM_WRITE_QUIET_PERIOD_MS   5000U
+#define Delay_5_SEC                    5000U
 
 
 static uint8_t ADC_Channel_Index = 0U;
@@ -46,36 +47,40 @@ static const ADC_Channel_t ADC_Channel_Sequence[] = {
 };
 
 static EEPROM_Data_t EEPROM_Last_Written;
-static bool     EEPROM_Dirty        = false;
+static bool EEPROM_Dirty        = false;
 static uint32_t EEPROM_Dirty_Since  = 0U;
 
 static void System_Init(void);
 static void Process_Pending_Event(void);
 static void Service_EEPROM(void);
 static void Service_ADC(void);
+const char* Start_Msg1="WELCOME";
+const char* Start_Msg2="TRANS ACNR";
 
 int main(void)
 {
     System_Init();
-
+    LCD_Clear();
+    LCD_String_XY(0,4,Start_Msg1);
+    LCD_String_XY(0,3,Start_Msg2);
+    DelayMs(Delay_5_SEC);
     for(;;)
     {
-
+    	//Check_OverCurrent();
         Process_Pending_Event();
+        HMI.curr_temp = ADC_Data.Temp_Sensor_Val;
+        Update_Compressor_State((volatile HMI_t *)&HMI);
 
 
-        Update_Compressor_State((HMI_t *)&HMI);
-
-
-        Update_Output((HMI_t *)&HMI);
+        Update_Output((volatile HMI_t *)&HMI);
 
         Update_Display(HMI);
-
         //write to EEPROM only after its been dirty and quiet for a while
         Service_EEPROM();
 
         // service next ADC channel in sequence if the ADC is free
         Service_ADC();
+
     }
 
     return 0;
@@ -83,8 +88,9 @@ int main(void)
 
 static void System_Init(void)
 {
-
+    //check if return value from all those init function has true return value
     Systick_Init(SYSTICK_1MS_LOAD_VALUE, SysTick_CTRL_CLKSOURCE_PROCESSOR_CLK, SysTick_EXCEPTION_EN);
+
     LPIT_Init();
 
     LCD_Init();
@@ -100,8 +106,7 @@ static void System_Init(void)
     // Loads defaults or restores from EEPROM, and copies the EEPROM into EEPROM_Last_Written
     HMI_Init((HMI_t *)&HMI);
 
-    // Snapshot what HMI_Init just settled on/restored, so the very
-     //first loop pass doesn't immediately treat it as a pending change.
+//Snapshot what HMI_Init just settled on/restored, so the very first loop pass doesn't immediately treat it as a pending change.
     EEPROM_Last_Written=EEPROM;
     EEPROM_Dirty=false;
 

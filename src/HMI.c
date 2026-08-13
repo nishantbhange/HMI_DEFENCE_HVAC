@@ -22,6 +22,21 @@
  volatile ErrorCode_t Current_Error;
  static Compressor_t Prev_Compressor_State;
  int comp_ct_val=0;
+ volatile bool Check_Status_Flag =RESET;
+ static volatile uint32_t Compressor_Overcurrent_Time_ms=0;
+ static void Error_Display_Handler(void);
+ static volatile  uint32_t Systick_Tick_Count_ADC_Error =0;
+
+ static void update_state_ADC_Error(void );
+ static void update_state_HPSW_Error(void );
+ static void update_state_LPSW_Error(void );
+ static void update_state_OC_Error(void );
+ static bool Check_Errors_Clear(ErrorCode_t code );
+
+ static void LPSW_Error_Handler(bool Error_Set_Reset );
+ static void HPSW_Error_Handler(bool Error_Set_Reset );
+ static void ADC_Error_Handler(bool Error_Set_Reset );
+ static void OC_Error_Handler(bool Error_Set_Reset );
 
 
 
@@ -35,10 +50,12 @@
 
 	    	                    if(HMI.status==AC_on){
 	    							HMI.status=AC_off;
+	    							PINS_DRV_ClearPins(IP_PTE,1U<<PIN_BLC);
 	    							//turn off the ac .
 	    							}
 	    						else if(HMI.status==AC_off){
 	    							HMI.status=AC_on;
+	    							 PINS_DRV_SetPins(IP_PTE,1U<<PIN_BLC);
 	    							//turn on the ac .
 
 	    						}
@@ -116,12 +133,15 @@
 		                   //turn off compressor call error handler and do troubleshooting steps push error logs into eeprom !!
 		                   //push error flags into EEprom too
 		                   HMI.error_flag=error_flag_set;
+		                   HMI.Compressor_Error_State=Compressor_on;
 		                   EEPROM.Error_Present=HMI.error_flag;
 		                   EEPROM.ErrorCode=Current_Error;
+		                   Error_Handler();
 			 	 	 	    break;
 	 case Event_Error_Clear :
 		                  HMI.error_flag=error_flag_reset;
 	                      EEPROM.Error_Present=HMI.error_flag;
+	                      Error_Handler();
 
 		                    break;
 	 default:
@@ -169,7 +189,7 @@
 		{
 		Relay_Cntrl(Compressor,Compressor_on);
 		Led_Cntrl(Compressor,Compressor_on);
-
+		Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
 		Relay_Cntrl(Heater,Heater_off);
 		Led_Cntrl(Heater,Heater_off);
 
@@ -178,6 +198,7 @@
 
 		Relay_Cntrl(Compressor,Compressor_off);
 		Led_Cntrl(Compressor,Compressor_off);
+		Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 
 
 
@@ -250,6 +271,8 @@
 				Relay_Cntrl(Compressor,Compressor_on);
 				Led_Cntrl(Compressor,Compressor_on);
 
+				Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
+
 				Relay_Cntrl(Heater,Heater_off);
 				Led_Cntrl(Heater,Heater_off);
 
@@ -257,32 +280,65 @@
 			   else if(HMI->compressor_state==Compressor_off ){
 
 			   	Relay_Cntrl(Compressor,Compressor_off);
+			   	Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 			 	Led_Cntrl(Compressor,Compressor_off);
 			   		 }
 	}
 	else{
 		//either error has occured or machine state if off
-		  //condenser off
-		  Relay_Cntrl(Condenser,Condenser_off);
-		  Led_Cntrl(Condenser,Condenser_off);
-		//Blower off
-      	  Relay_Cntrl(Blower,Blower_off);
-		  Led_Cntrl(Blower,Blower_off);
-	    //Vent off
-		  Relay_Cntrl(Vent,Vent_off);
-		  Led_Cntrl(Vent,Vent_off);
-		//heater off
-		  Relay_Cntrl(Heater,Heater_off);
-		  Led_Cntrl(Heater,Heater_off);
-		 //compressor off
-		  Relay_Cntrl(Compressor,Compressor_off);
-		  Led_Cntrl(Compressor,Compressor_off);
-		  //solenoid valve off
-		  Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+		if(HMI->status==AC_off){
+			//condenser off
+					  Relay_Cntrl(Condenser,Condenser_off);
+					  Led_Cntrl(Condenser,Condenser_off);
+					//Blower on
+			      	  Relay_Cntrl(Blower,Blower_on);
+					  Led_Cntrl(Blower,Blower_on);
+				    //Vent off
+					  Relay_Cntrl(Vent,Vent_off);
+					  Led_Cntrl(Vent,Vent_off);
+					//heater off
+					  Relay_Cntrl(Heater,Heater_off);
+					  Led_Cntrl(Heater,Heater_off);
+					 //compressor off
+					  Relay_Cntrl(Compressor,Compressor_off);
+					  Led_Cntrl(Compressor,Compressor_off);
+					  //solenoid valve off
+					  Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+
+		}
+
+else{
+             //error condition
+             //ADC error -compressor on for 7 mins compressor off 3 mins do it in cycles
+			if(HMI->Display_Error_Code[ADC_ERROR_INDEX]==Error_Event_ADC){
+				//everything off except blower
+				update_state_ADC_Error();
+
+			}
+			//LPSW error -only blower on
+			else if(HMI->Display_Error_Code[LPSW_ERROR_INDEX]==Error_Event_LPSW){
+				//everything off except blower
+				update_state_LPSW_Error();
+
+			}
+			//HPSW error -condenser on , blower on
+			else if(HMI->Display_Error_Code[HPSW_ERROR_INDEX]==Error_Event_HPSW){
+				//everything off except blower and condenser fan
+				update_state_HPSW_Error();
+
+			}
+			//compressor overcurrent error-condenser on , blower on
+			else if(HMI->Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
+							//everything off except blower and condenser fan
+				update_state_OC_Error();
+
+						}
+
+		}
 
 
 	}
-	Event=Event_NONE;
+
 }
 
  void Update_Compressor_State(HMI_t *HMI){
@@ -311,7 +367,7 @@
 }
 
  void Update_Display(HMI_t HMI){
-	 if(HMI.error_flag!=error_flag_set){
+	 if(HMI.error_flag!=error_flag_set&&HMI.status==AC_on){
 	const char* Display_Mode;
 
 
@@ -329,7 +385,6 @@
 
 	Prev_Mode=HMI.mode;
 	LCD_String_XY(0, 0, Display_Mode);
-
    }
 
    char Display_Temp[8];
@@ -347,9 +402,15 @@
 
    }
 	 }
-	 else{
+	 else if(HMI.status==AC_off){
 
-		 char *Error_Code;
+		 //BLC pin reset (brightness set to 0) so do nothing
+
+
+	 }
+	 else{
+/*
+		 char *Error_Code="Error";
 		 switch(HMI.Display_Error_Code){
 		 case Error_Event_LPSW :
 			Error_Code="LPSW_ERROR";
@@ -370,6 +431,8 @@
 		    LCD_String_XY(1, 0, Error_Code);
 		    Prev_Display_Error_Code = HMI.Display_Error_Code;
 		     }
+*/
+		 Error_Display_Handler();
 
 	 }
 
@@ -419,6 +482,7 @@
     HMI->heater_state=First_EEPROM_Data.heater_state;
     HMI->vent_state=First_EEPROM_Data.vent_state;
     HMI->error_flag=First_EEPROM_Data.Error_Present;
+    HMI->Blower_state=Blower_on;
 
     EEPROM = First_EEPROM_Data;
 
@@ -553,6 +617,7 @@ void Led_Cntrl( Part_t part,bool Enable){
 
 void SysTick_Handler(void){
 	Global_Tick_Count++;
+	if(HMI.error_flag==error_flag_reset){
 	if(HMI.user_compressor_state==Compressor_on){
 	if(HMI.compressor_state==Compressor_wait_to_on || HMI.compressor_state==Compressor_wait_to_off)
 	{
@@ -586,7 +651,15 @@ void SysTick_Handler(void){
 		}
 
 
+	}
+	else if(Check_Status_Flag){
+		Compressor_Overcurrent_Time_ms++;
+	}
+	else{
 
+		Systick_Tick_Count_ADC_Error++;
+
+	}
 }
 
 void Error_Handler( void  ){
@@ -602,6 +675,9 @@ if(Event==Event_Error){
 	case Error_Event_ADC :
 		ADC_Error_Handler(Error_Set);
        break ;
+	case Error_Event_OC :
+		OC_Error_Handler(Error_Set);
+	       break ;
 
       default:
     	  //if any extra error could be there implement it
@@ -621,6 +697,9 @@ else if(Event==Event_Error_Clear){
 	case Error_ADC_Clear :
 		ADC_Error_Handler(Error_Reset);
 		break ;
+	case Error_Event_OC :
+		OC_Error_Handler(Error_Reset);
+		break ;
 
 	 default:
 	    break ;
@@ -634,15 +713,23 @@ void LPSW_Error_Handler(bool Error_Set_Reset ){
 if(Error_Set_Reset==Error_Set){
 	Prev_Compressor_State=HMI.compressor_state;
 	HMI.error_flag = error_flag_set;
-    HMI.Display_Error_Code=Error_Event_LPSW;
+    HMI.Display_Error_Code[LPSW_ERROR_INDEX]=Error_Event_LPSW;
+    HMI.Active_Errors&=~(1<<LPSW_Active_Error_Bit);
+    HMI.Active_Errors|=(1<<LPSW_Active_Error_Bit);
+    HMI.Active_Errors&=(Active_Error_Mask);
 }
 else if(Error_Set_Reset==Error_Reset){
+	HMI.Active_Errors&=~(1<<LPSW_Active_Error_Bit);
+	HMI.Active_Errors&=(Active_Error_Mask);
+	if(Check_Errors_Clear(Error_Event_LPSW)){
 	HMI.error_flag = error_flag_reset;
+
      if(Prev_Compressor_State==Compressor_on){
 		HMI.compressor_state=Compressor_wait_to_on;
 	}
 	else{
 		HMI.compressor_state=Prev_Compressor_State;
+	}
 	}
 }
 Update_Display(HMI);
@@ -652,44 +739,359 @@ void HPSW_Error_Handler(bool Error_Set_Reset){
 if(Error_Set_Reset==Error_Set){
 	Prev_Compressor_State=HMI.compressor_state;
 	HMI.error_flag = error_flag_set;
-	HMI.Display_Error_Code=Error_Event_HPSW;
+	HMI.Display_Error_Code[HPSW_ERROR_INDEX]=Error_Event_HPSW;
+	HMI.Active_Errors&=~(1<<HPSW_Active_Error_Bit);
+	HMI.Active_Errors|=(1<<HPSW_Active_Error_Bit);
+	HMI.Active_Errors&=(Active_Error_Mask);
 }
 else if(Error_Set_Reset==Error_Reset){
+	HMI.Active_Errors&=~(1<<HPSW_Active_Error_Bit);
+	HMI.Active_Errors&=(Active_Error_Mask);
+	if(Check_Errors_Clear(Error_Event_HPSW)){
 	HMI.error_flag = error_flag_reset;
 	if(Prev_Compressor_State==Compressor_on){
-		HMI.compressor_state=Compressor_wait_to_on;
+	HMI.compressor_state=Compressor_wait_to_on;
 	}
 	else{
-		HMI.compressor_state=Prev_Compressor_State;
+	HMI.compressor_state=Prev_Compressor_State;
 	}
-
+	}
 }
 Update_Display(HMI);
 }
+
+
 void ADC_Error_Handler(bool Error_Set_Reset ){
 	if(Error_Set_Reset==Error_Set){
 		HMI.error_flag = error_flag_set;
-		HMI.Display_Error_Code=Error_Event_ADC;
+		HMI.Display_Error_Code[ADC_ERROR_INDEX]=Error_Event_ADC;
+		HMI.Active_Errors&=~(1<<ADC_Active_Error_Bit);
+		HMI.Active_Errors|=(1<<ADC_Active_Error_Bit);
+		HMI.Active_Errors&=(Active_Error_Mask);
 	}
 	else if(Error_Set_Reset==Error_Reset){
+		HMI.Active_Errors&=~(1<<ADC_Active_Error_Bit);
+		HMI.Active_Errors&=(Active_Error_Mask);
+	if(Check_Errors_Clear(Error_Event_ADC)){
 		HMI.error_flag = error_flag_reset;
+	}
 	}
 	Update_Display(HMI);
 
 }
-void Check_States(void){
-  comp_ct_val=ADC_Data.ADC_Compressor_Val;
-if(comp_ct_val>=COMPRESSOR_CT_VAl_120x && comp_ct_val<COMPRESSOR_CT_VAl_150x){
-//wait for 10 mins before switching off compressor
+
+void OC_Error_Handler(bool Error_Set_Reset ){
+	if(Error_Set_Reset==Error_Set){
+		HMI.error_flag = error_flag_set;
+		HMI.Display_Error_Code[OC_ERROR_INDEX]=Error_Event_OC;
+		HMI.Active_Errors&=~(1<<OC_Active_Error_Bit);
+		HMI.Active_Errors|=(1<<OC_Active_Error_Bit);
+		HMI.Active_Errors&=(Active_Error_Mask);
+	}
+	else if(Error_Set_Reset==Error_Reset){
+		HMI.Active_Errors&=~(1<<OC_Active_Error_Bit);
+		HMI.Active_Errors&=(Active_Error_Mask);
+	if(Check_Errors_Clear(Error_Event_OC)){
+		HMI.error_flag = error_flag_reset;
+	}
+	}
+	Update_Display(HMI);
 
 }
-else if(comp_ct_val>=COMPRESSOR_CT_VAl_150x && comp_ct_val<COMPRESSOR_CT_VAl_200x){
-//wait for 3 mins before switching off compressor
 
-}
-else if(comp_ct_val>=COMPRESSOR_CT_VAl_200x){
+
+/*void Check_OverCurrent(void){
+comp_ct_val=ADC_Data.ADC_Compressor_Val;
 //wait for 1 min before switching off compressor
+if(comp_ct_val>=COMPRESSOR_CT_VAl_150x){
+	Event=Event_Error;
+	Current_Error=Error_Event_OC;
+	Check_Status_Flag=SET;
+}
+
+else{
+		Check_Status_Flag=RESET;
+
+		Event=Event_Error_Clear;
+		Current_Error=Error_Event_OC;
+	}
+
+}
+*/
+
+void Error_Display_Handler(void)
+{
+    static uint8_t error_index = 0;
+    static uint32_t start_tick = 0;
+
+    static const uint32_t error_mask[] =
+    {
+        ERROR_LPSW,
+        ERROR_HPSW,
+        ERROR_ADC,
+        ERROR_OC,
+    };
+
+    static const ErrorCode_t error_code[] =
+    {
+        Error_Event_LPSW,
+        Error_Event_HPSW,
+        Error_Event_ADC,
+		Error_Event_OC
+    };
+
+    uint8_t checked = 0;
+
+    // Find an active error
+    while (checked < 4U)
+    {
+        if (HMI.Active_Errors & error_mask[error_index])
+        {
+            break;
+        }
+
+        error_index++;
+
+        if (error_index >= 4U)
+        {
+            error_index = 0;
+        }
+
+        checked++;
+    }
+
+    // No active errors
+    if (checked == 4U)
+    {
+        return;
+    }
+
+    // Change displayed error every 2 seconds
+    if ((Global_Tick_Count - start_tick) >= 2000U)
+    {
+        start_tick = Global_Tick_Count;
+
+        error_index++;
+
+        if (error_index >= 4U)
+        {
+            error_index = 0;
+        }
+
+    // Find next active error
+        checked = 0;
+
+        while (checked < 4U)
+        {
+            if (HMI.Active_Errors & error_mask[error_index])
+            {
+                break;
+            }
+
+            error_index++;
+
+            if (error_index >= 4U)
+            {
+                error_index = 0;
+            }
+
+            checked++;
+        }
+    }
+
+    if (error_code[error_index] != Prev_Display_Error_Code)
+    {
+        switch (error_code[error_index])
+        {
+            case Error_Event_LPSW:
+                LCD_Clear();
+                LCD_String_XY(0, 0, "ERROR");
+                LCD_String_XY(1, 0, "LPSW_ERROR");
+                break;
+
+            case Error_Event_HPSW:
+                LCD_Clear();
+                LCD_String_XY(0, 0, "ERROR");
+                LCD_String_XY(1, 0, "HPSW_ERROR");
+                break;
+
+            case Error_Event_ADC:
+                LCD_Clear();
+                LCD_String_XY(0, 0, "ERROR");
+                LCD_String_XY(1, 0, "ADC_ERROR");
+                break;
+
+            case Error_Event_OC:
+                LCD_Clear();
+                LCD_String_XY(0, 0, "ERROR");
+                LCD_String_XY(1, 0, "ADC_ERROR");
+                break;
+
+            default:
+                break;
+        }
+
+        Prev_Display_Error_Code = error_code[error_index];
+    }
+}
+
+static void update_state_ADC_Error(void ){
+	if(HMI.Blower_state!=Blower_on){
+					     HMI.Blower_state=Blower_on;
+						 Relay_Cntrl(Blower,Blower_on);
+						 Led_Cntrl(Blower,Blower_on);
+					}
+					//condenser off
+					if(HMI.condenser_state!=Condenser_off){
+						HMI.condenser_state=Condenser_off;
+					    Relay_Cntrl(Condenser,Condenser_off);
+						Led_Cntrl(Condenser,Condenser_off);
+									}
+
+				     //Vent off
+					if(HMI.vent_state!=Vent_off){
+						HMI.vent_state=Vent_off;
+						Relay_Cntrl(Vent,Vent_off);
+						Led_Cntrl(Vent,Vent_off);
+									}
+	                 //heater off
+					if(HMI.heater_state!=Heater_off){
+						HMI.heater_state=Heater_off;
+						Relay_Cntrl(Heater,Heater_off);
+						Led_Cntrl(Heater,Heater_off);
+									}
+
+	               if(Systick_Tick_Count_ADC_Error>=TICK_COUNT_7MINS&&HMI.Compressor_Error_State==Compressor_off){
+	            	    HMI.Compressor_Error_State=Compressor_on;
+	            	    Relay_Cntrl(Compressor,Compressor_on);
+	            	    Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
+	            	    Led_Cntrl(Compressor,Compressor_on);
+	            	    Systick_Tick_Count_ADC_Error=0;
+	             }
+
+	               else if(Systick_Tick_Count_ADC_Error>=TICK_COUNT_3MINS&&HMI.Compressor_Error_State==Compressor_on){
+		             HMI.Compressor_Error_State=Compressor_off;
+		             Relay_Cntrl(Compressor,Compressor_off);
+		             Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+	            	 Led_Cntrl(Compressor,Compressor_off);
+	            	 Systick_Tick_Count_ADC_Error=0;
+	             }
 
 }
 
+static void update_state_HPSW_Error(void ){
+	if(HMI.Blower_state!=Blower_on){
+					HMI.Blower_state=Blower_on;
+					Relay_Cntrl(Blower,Blower_on);
+					Led_Cntrl(Blower,Blower_on);
+													}
+					//condenser on
+	if(HMI.condenser_state!=Condenser_on){
+					HMI.condenser_state=Condenser_on;
+					Relay_Cntrl(Condenser,Condenser_on);
+					Led_Cntrl(Condenser,Condenser_on);
+													}
+
+					 //Vent off
+	if(HMI.vent_state!=Vent_off){
+					HMI.vent_state=Vent_off;
+					Relay_Cntrl(Vent,Vent_off);
+					Led_Cntrl(Vent,Vent_off);
+													}
+					//heater off
+	if(HMI.heater_state!=Heater_off){
+					HMI.heater_state=Heater_off;
+					Relay_Cntrl(Heater,Heater_off);
+					Led_Cntrl(Heater,Heater_off);
+													}
+					//compressor off
+	if(HMI.Compressor_Error_State!=Compressor_off){
+					HMI.Compressor_Error_State=Compressor_off;
+					Relay_Cntrl(Compressor,Compressor_off);
+					Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+					Led_Cntrl(Compressor,Compressor_off);
+										                                                  }
+}
+
+static void update_state_LPSW_Error(void ){
+	if(HMI.Blower_state!=Blower_on){
+				    HMI.Blower_state=Blower_on;
+				    Relay_Cntrl(Blower,Blower_on);
+				    Led_Cntrl(Blower,Blower_on);
+									}
+					//condenser off
+	if(HMI.condenser_state!=Condenser_off){
+				    HMI.condenser_state=Condenser_off;
+				    Relay_Cntrl(Condenser,Condenser_off);
+				    Led_Cntrl(Condenser,Condenser_off);
+									}
+
+					//Vent off
+	if(HMI.vent_state!=Vent_off){
+					HMI.vent_state=Vent_off;
+					Relay_Cntrl(Vent,Vent_off);
+					Led_Cntrl(Vent,Vent_off);
+													}
+					 //heater off
+	if(HMI.heater_state!=Heater_off){
+					HMI.heater_state=Heater_off;
+					Relay_Cntrl(Heater,Heater_off);
+					Led_Cntrl(Heater,Heater_off);
+													}
+					//compressor off
+	if(HMI.Compressor_Error_State!=Compressor_off){
+					HMI.Compressor_Error_State=Compressor_off;
+					Relay_Cntrl(Compressor,Compressor_off);
+					Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+					Led_Cntrl(Compressor,Compressor_off);
+						                          }
+
+}
+
+static void update_state_OC_Error(void ){
+	                    if(HMI.Blower_state!=Blower_on){
+						     HMI.Blower_state=Blower_on;
+							 Relay_Cntrl(Blower,Blower_on);
+							 Led_Cntrl(Blower,Blower_on);
+						}
+						//condenser on
+						if(HMI.condenser_state!=Condenser_on){
+							HMI.condenser_state=Condenser_on;
+						    Relay_Cntrl(Condenser,Condenser_on);
+							Led_Cntrl(Condenser,Condenser_on);
+										}
+
+					     //Vent off
+						if(HMI.vent_state!=Vent_off){
+							HMI.vent_state=Vent_off;
+							Relay_Cntrl(Vent,Vent_off);
+							Led_Cntrl(Vent,Vent_off);
+										}
+		                 //heater off
+						if(HMI.heater_state!=Heater_off){
+							HMI.heater_state=Heater_off;
+							Relay_Cntrl(Heater,Heater_off);
+							Led_Cntrl(Heater,Heater_off);
+										}
+
+	    if(Compressor_Overcurrent_Time_ms>=TICK_COUNT_1MIN && HMI.Compressor_Error_State!=Compressor_off){
+	         HMI.Compressor_Error_State=Compressor_off;
+	         Relay_Cntrl(Compressor,Compressor_off);
+	         Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+	         Led_Cntrl(Compressor,Compressor_off);
+			 Check_Status_Flag=RESET;
+		}
+
+}
+
+static bool Check_Errors_Clear(ErrorCode_t code){
+ for (uint8_t i=0; i<ERORR_COUNT;i++){
+	 if(HMI.Display_Error_Code[i]==code){
+		continue;
+	 }
+	 if(HMI.Display_Error_Code[i]<4){
+		 return 0;
+	 }
+ }
+ return 1;
 }

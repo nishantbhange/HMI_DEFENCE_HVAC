@@ -7,7 +7,7 @@
 #include "Delay.h"
 #include "HMI.h"
 
-uint16_t Tick_Count=0;
+uint32_t Tick_Count=0;
 static void Load_counter(uint32_t Load_Value);
 
 void LPIT_Init(void){

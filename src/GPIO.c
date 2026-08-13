@@ -9,8 +9,6 @@ volatile uint32_t Last_Tick[BTN_COUNT]={0};
 static float V_Temp=0;
 static float R_Temp=0;
 static float Temp_k=0;
-static bool Is_Pressed=0;
-
 
 #define ADC_MAX     4095.0f
 #define VREF        5.0f
@@ -94,14 +92,18 @@ static bool Is_Pressed=0;
 	  //PTD7-blower
 	  IP_PORTD->PCR[7] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	  IP_PORTD->PCR[7] |= PORT_PCR_IRQC(Rising_Edge);
-	  NVIC_SetPriority(PORTE_IRQn, 2);
-	  NVIC_EnableIRQ(PORTE_IRQn);
+	  NVIC_SetPriority(PORTD_IRQn, 2);
+	  NVIC_EnableIRQ(PORTD_IRQn);
 
       //PTE8-temp--
 	  IP_PORTE->PCR[8] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	  IP_PORTE->PCR[8] |= PORT_PCR_IRQC(Rising_Edge);
 	  NVIC_SetPriority(PORTE_IRQn, 2);
 	  NVIC_EnableIRQ(PORTE_IRQn);
+
+	  // ADC interrupt enable
+	  NVIC_SetPriority(ADC0_IRQn,2);
+	  NVIC_EnableIRQ(ADC0_IRQn);
 
   }
 
@@ -133,7 +135,21 @@ void ADC0_IRQHandler(void){
 		            ADC_Data.ADC_Condenser_Val = raw_voltage;
 		            break;
 		        case ADC_COMPRESSOR_CT:
-		            ADC_Data.ADC_Compressor_Val = raw_voltage;
+
+		            if( raw_voltage>=COMPRESSOR_CT_VAl_150x){
+		            	Event=Event_Error;
+		            	Current_Error=Error_Event_OC;
+		            	Check_Status_Flag=SET;
+		            }else{
+		            	ADC_Data.ADC_Compressor_Val = raw_voltage;
+		            	Check_Status_Flag=RESET;
+	                  if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
+		            	Event = Event_Error_Clear;
+		            	Current_Error = Error_OC_Clear;
+		            			            }
+
+		            }
+
 		            break;
 		        case ADC_BLOWER_CT:
 		            ADC_Data.ADC_Blower_Val = raw_voltage;
@@ -160,7 +176,7 @@ void ADC0_IRQHandler(void){
 		            }
 		            ADC_Data.Temp_Sensor_Val = Temp_k - 273.15f;
 
-		            if(HMI.error_flag == error_flag_set && HMI.Display_Error_Code == Error_Event_ADC){
+		            if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[ADC_ERROR_INDEX]==Error_Event_ADC){
 		                Event = Event_Error_Clear;
 		                Current_Error = Error_ADC_Clear;
 		            }
@@ -177,12 +193,13 @@ void ADC0_IRQHandler(void){
 
 void PORTA_IRQHandler(void){
 	uint32_t flags =IP_PORTA->ISFR;
+	 bool Is_Pressed=0;
 	//PTA2 -HPSW
 	if((flags>>HPSW_FLAG)&0x01U){
 
 		//HPSW interrupt handler set the error flag
 			if(Debounce_Check(BTN_HPSW)){
-			 Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01;
+				Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01;
 				//rising edge ->hpsw error has happened !!
 				              if(Is_Pressed){
 								 Event=Event_Error;
@@ -223,7 +240,7 @@ void PORTA_IRQHandler(void){
 void PORTB_IRQHandler(void){
 	//PTB5 temp++
 	//PTB4 PWR
-
+	 bool Is_Pressed=0;
 	uint32_t flags =IP_PORTB->ISFR;
 if((flags>>TEMP_INC_FLAG)&0x01U){
 

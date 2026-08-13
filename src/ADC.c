@@ -15,8 +15,7 @@ volatile ADC_Ctrl_t ADC_Ctrl ;
 ADC_Channel_t Current_ADC_Channel;
 
 bool ADC_Init(){
-	NVIC_SetPriority(ADC0_IRQn,2);
-	NVIC_EnableIRQ(ADC0_IRQn);
+
 	// FIRCDIV2 = 4: FIRCDIV2 divide by 8
 	IP_SCG->FIRCDIV &=(~(SCG_FRC_DIV_MASK));
 	IP_SCG->FIRCDIV |= (FRCDIV2_8<<SCG_FIRCDIV_BIT_FIRCDIV2);
