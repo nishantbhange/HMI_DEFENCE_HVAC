@@ -32,11 +32,21 @@
 #include "Delay.h"
 
 
+
 #define SYSTICK_1MS_LOAD_VALUE   (CoreClockHz / 1000U - 1U)
 
 #define EEPROM_WRITE_QUIET_PERIOD_MS   5000U
 #define Delay_5_SEC                    5000U
 
+ volatile bool ADC_Timeout_Flag;
+ volatile uint32_t ADC_Timeout_Count;
+ volatile bool EEPROM_Timeout_Flag;
+ volatile uint32_t EEPROM_Timeout_Count;
+ volatile bool EEPROM_Write_Timeout_Flag;
+ volatile uint32_t EEPROM_Write_Timeout_Count;
+
+ volatile bool ADC_Bsy_Timeout_Flag;
+  volatile uint32_t ADC_Bsy_Timeout_Count;
 
 static uint8_t ADC_Channel_Index = 0U;
 static const ADC_Channel_t ADC_Channel_Sequence[] = {
@@ -57,20 +67,37 @@ static void Service_ADC(void);
 const char* Start_Msg1="WELCOME";
 const char* Start_Msg2="TRANS ACNR";
 
+const char* Error_Msg1="WARNING EEPROM";
+
+const char* Error_Msg2="WARNING ADC";
+const char* Error_Msg3="INIT FAILED";
+const char* Error_Msg4="WRITE FAILED";
+
 int main(void)
 {
     System_Init();
+    //check if any of lpsw or hpsw is high at start .
+    uint32_t values=PINS_DRV_ReadPins(IP_PTA);
+    if((values>>SW_PIN_LPSW)&0x01){
+    	Event=Event_Error;
+        Current_Error=Error_Event_LPSW;
+    }
+    if((values>>SW_PIN_HPSW)&0x01){
+    	Event=Event_Error;
+    	Current_Error=Error_Event_HPSW;
+        }
     LCD_Clear();
     LCD_String_XY(0,4,Start_Msg1);
-    LCD_String_XY(0,3,Start_Msg2);
+    LCD_String_XY(1,3,Start_Msg2);
     DelayMs(Delay_5_SEC);
     for(;;)
     {
     	//Check_OverCurrent();
         Process_Pending_Event();
         HMI.curr_temp = ADC_Data.Temp_Sensor_Val;
+        if(HMI.error_flag==error_flag_set){
         Update_Compressor_State((volatile HMI_t *)&HMI);
-
+        }
 
         Update_Output((volatile HMI_t *)&HMI);
 
@@ -88,6 +115,11 @@ int main(void)
 
 static void System_Init(void)
 {
+	// Loads defaults or restores from EEPROM, and copies the EEPROM into EEPROM_Last_Written
+    HMI_Init((HMI_t *)&HMI);
+    //Snapshot what HMI_Init just settled on/restored, so the very first loop pass doesn't immediately treat it as a pending change.
+    EEPROM_Last_Written=EEPROM;
+    EEPROM_Dirty=false;
     //check if return value from all those init function has true return value
     Systick_Init(SYSTICK_1MS_LOAD_VALUE, SysTick_CTRL_CLKSOURCE_PROCESSOR_CLK, SysTick_EXCEPTION_EN);
 
@@ -96,19 +128,49 @@ static void System_Init(void)
     LCD_Init();
     LCD_Clear();
 
-    EEPROM_Init();
-    ADC_Init();
+    EEPROM_Timeout_Flag=SET;
+    while(EEPROM_Timeout_Count<=TICK_COUNT_500MS){
+    if(EEPROM_Init()){
+    	EEPROM_Timeout_Flag=RESET;
+    	EEPROM_Timeout_Count=0;
+    break;
+    }
+    if(EEPROM_Timeout_Count>=TICK_COUNT_500MS){
+    	//printf("Warning ADC init failed")
+    	 LCD_Clear();
+    	 LCD_String_XY(0,0,Error_Msg1);
+    	 LCD_String_XY(1,0,Error_Msg3);
+    	 EEPROM_Timeout_Flag=RESET;
+    	 EEPROM_Timeout_Count=0;
+    }
+    }
+
+    ADC_Timeout_Flag=SET;
+      while(ADC_Timeout_Count<=TICK_COUNT_500MS){
+      if(ADC_Init()){
+      ADC_Timeout_Flag=RESET;
+      ADC_Timeout_Count=0;
+      break;
+      }
+      if(ADC_Timeout_Count>=TICK_COUNT_500MS){
+      	//printf("Warning ADC init failed")
+      	 LCD_Clear();
+      	 LCD_String_XY(0,0,Error_Msg2);
+      	 LCD_String_XY(1,0,Error_Msg3);
+      	 ADC_Timeout_Flag=RESET;
+      	 ADC_Timeout_Count=0;
+      }
+      }
+
+
+
 
     Interrupt_Init();
 
     Event = Event_NONE;
 
-    // Loads defaults or restores from EEPROM, and copies the EEPROM into EEPROM_Last_Written
-    HMI_Init((HMI_t *)&HMI);
 
-//Snapshot what HMI_Init just settled on/restored, so the very first loop pass doesn't immediately treat it as a pending change.
-    EEPROM_Last_Written=EEPROM;
-    EEPROM_Dirty=false;
+
 
 }
 
@@ -155,17 +217,46 @@ static void Service_EEPROM(void)
     // Data is currently stable (matches last snapshot)commit it to flash
     if(EEPROM_Dirty && ((Global_Tick_Count - EEPROM_Dirty_Since) >= EEPROM_WRITE_QUIET_PERIOD_MS))
     {
-        EEPROM_Write((const EEPROM_Data_t *)&EEPROM);
+
+
+
+    	EEPROM_Write_Timeout_Flag=SET;
+          while(EEPROM_Write_Timeout_Count<=TICK_COUNT_100MS){
+          if(EEPROM_Write((const EEPROM_Data_t *)&EEPROM)){
+        	  EEPROM_Write_Timeout_Flag=RESET;
+        	  EEPROM_Write_Timeout_Count=0;
+          break;
+          }
+          if(EEPROM_Write_Timeout_Count>=TICK_COUNT_100MS){
+          	//printf("Warning EEPROM WRITE failed")
+          	 LCD_Clear();
+          	 LCD_String_XY(0,0,Error_Msg1);
+          	 LCD_String_XY(1,0,Error_Msg4);
+          	EEPROM_Write_Timeout_Flag=RESET;
+          	EEPROM_Write_Timeout_Count=0;
+          }
+          }
+
+
+
         EEPROM_Last_Written = EEPROM;
         EEPROM_Dirty        = false;
     }
 }
-
 static void Service_ADC(void)
 {
     if(ADC_Ctrl.Status == ADC_FREE)
-    {
+    {   ADC_Bsy_Timeout_Flag=SET;
         ADC_Task(ADC_Channel_Sequence[ADC_Channel_Index]);
         ADC_Channel_Index = (uint8_t)((ADC_Channel_Index + 1U) % ADC_CHANNEL_COUNT);
     }
+   if(ADC_Bsy_Timeout_Count>=TICK_COUNT_5SEC && ADC_Ctrl.Status == ADC_BUSY){
+
+	ADC_Ctrl.Status = ADC_FREE;
+	ADC_Bsy_Timeout_Flag=RESET;
+	ADC_Bsy_Timeout_Count=0;
+	Event = Event_Error;
+    Current_Error=Error_Event_ADC;
+}
+
 }

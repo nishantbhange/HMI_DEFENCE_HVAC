@@ -19,11 +19,11 @@
 
 #define ON    1
 #define OFF   0
-
 #define SET   1
 #define RESET 0
 
 
+#define TICK_COUNT_5SEC            5000U
 
 
 #define MAX_TEMP             30
@@ -43,6 +43,10 @@
 #define TICK_COUNT_7MINS          420*1000U
 #define TICK_COUNT_3MINS          180*1000U
 
+#define TICK_COUNT_500MS            500U
+#define TICK_COUNT_100MS            100U
+
+
 #define ERORR_COUNT                    4U
 #define LPSW_ERROR_INDEX               0U
 #define HPSW_ERROR_INDEX               1U
@@ -58,8 +62,10 @@
 
 #define PIN_BLC                         9
 
-
-
+extern volatile bool ADC_Timeout_Flag;
+extern volatile uint32_t ADC_Timeout_Count;
+extern volatile bool EEPROM_Timeout_Flag;
+extern volatile uint32_t EEPROM_Timeout_Count;
 typedef enum{
 
   Auto_Mode ,
@@ -198,7 +204,7 @@ void Led_Cntrl( Part_t part,bool Enable);
 void Error_Handler( void  );
 void Update_Compressor_State(HMI_t *HMI);
 
-
+void Backlight_Cntrl(bool On_Off);
 
 
 //void Check_OverCurrent(void);

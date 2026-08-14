@@ -185,7 +185,8 @@ void ADC0_IRQHandler(void){
 		        default:
 		            break;
 		    }
-
+		    ADC_Bsy_Timeout_Flag = RESET;
+		    ADC_Bsy_Timeout_Count = 0;
 		    ADC_Ctrl.Status = ADC_FREE;
 
 }

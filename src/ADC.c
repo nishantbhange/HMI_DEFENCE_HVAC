@@ -8,7 +8,10 @@
 
 #include "ADC.h"
 #include "NVIC.h"
-
+#define SET   1
+#define RESET 0
+ volatile bool ADC_Init_Timeout_Flag;
+ volatile uint32_t ADC_Init_Timeout_Count;
 volatile ADC_Readings_t ADC_Data ;
 volatile ADC_Ctrl_t ADC_Ctrl ;
 
@@ -53,7 +56,16 @@ bool ADC_Init(){
 			      | ADC_SC3_AVGE_MASK /* AVGE = 1: Enable hardware average */
 	              | (ADC_HW_AVG_SAMPLE_32<<ADC_SC3_BIT_AVGS); /* AVGS = 11b: 32 samples averaged */
 	//Wait for completion
-	while(((IP_ADC0->SC1[0] & ADC_SC1_COCO_MASK)>>ADC_SC1_COCO_SHIFT) == 0);
+	while(((IP_ADC0->SC1[0] & ADC_SC1_COCO_MASK)>>ADC_SC1_COCO_SHIFT) == 0){
+		ADC_Init_Timeout_Flag=SET;
+		if(ADC_Init_Timeout_Count>TICK_COUNT_5SEC){
+			ADC_Init_Timeout_Count=0;
+			ADC_Init_Timeout_Flag=RESET;
+			break ;
+		}
+	}
+	ADC_Init_Timeout_Count=0;
+	ADC_Init_Timeout_Flag=RESET;
       //check is calibration is fine
 	if (IP_ADC0->SC3 & ADC_SC3_CAL_MASK)
 	{

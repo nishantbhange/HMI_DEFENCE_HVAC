@@ -10,6 +10,9 @@
 uint32_t Tick_Count=0;
 static void Load_counter(uint32_t Load_Value);
 
+volatile bool LPIT_Timeout_Flag;
+ volatile uint32_t LPIT_Timeout_Count;
+
 void LPIT_Init(void){
 	IP_LPIT0->MCR=(1<<LPIT0_MCR_BIT_DBG_EN)|
 			      (1<<LPIT0_MCR_BIT_M_CEN);
@@ -38,8 +41,16 @@ uint32_t Ticks = (uint32_t)(((uint64_t)SCG_SIRC_DIV2_clock * us) / 1000000U);
 
 	Load_counter(Load_Value);
 	while(!(IP_LPIT0->MSR & 0x01)){
+		LPIT_Timeout_Flag=SET;
+		if(LPIT_Timeout_Count>TICK_COUNT_5SEC){
+			LPIT_Timeout_Count=0;
+			LPIT_Timeout_Flag=RESET;
+			break ;
+		}
 
 	}
+	LPIT_Timeout_Count=0;
+	LPIT_Timeout_Flag=RESET;
 	IP_LPIT0->MSR =(1<<LPIT0_MSR_BIT_TIF0);
 
 }

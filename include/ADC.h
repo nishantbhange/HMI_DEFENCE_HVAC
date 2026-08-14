@@ -14,6 +14,9 @@
 #define ADC_SC1_BIT_AIEN           6
 #define ADC_SC1_BIT_ADCH           0
 
+//#define SET           0
+//#define RESET           1
+
 #define ADC_SC2_BIT_ADTRG           6
 #define ADC_SC2_BIT_ACFE            5
 #define ADC_SC2_BIT_DMAEN           2
@@ -40,6 +43,8 @@
 
 #define ADC_SC3_BIT_AVGS           0
 #define ADC_HW_AVG_SAMPLE_32       0x3
+
+#define TICK_COUNT_5SEC            5000U
 
 #define SCG_FRC_DIV_MASK           (0x00000F00)
 #define PCC_PCCN_PCS_MASK          (0x0F000000)
@@ -77,6 +82,12 @@ float ADC_Blower_Val;
 extern volatile ADC_Readings_t ADC_Data ;
 extern volatile ADC_Ctrl_t ADC_Ctrl ;
 extern ADC_Channel_t Current_ADC_Channel;
+
+extern volatile bool ADC_Init_Timeout_Flag;
+extern volatile uint32_t ADC_Init_Timeout_Count;
+
+extern volatile bool ADC_Bsy_Timeout_Flag;
+extern volatile uint32_t ADC_Bsy_Timeout_Count;
 
 bool ADC_Init(void);
 bool ADC_Task(ADC_Channel_t ADC_Channel  );

@@ -10,6 +10,11 @@ static void Wait_CCIF(void);
 static void Wait_EEERDY(void);
 static bool Config_Ram_Operation(void );
 
+volatile bool CCIF_TIMEOUT_FLAG;
+volatile bool EEERDY_TIMEOUT_FLAG;
+volatile uint32_t CCIF_TIMEOUT_COUNT;
+volatile uint32_t EEERDY_TIMEOUT_COUNT;
+
 bool EEPROM_Read( EEPROM_Data_t *Data){
 	if(Data==NULL){
 		return false;
@@ -23,6 +28,7 @@ bool EEPROM_Read( EEPROM_Data_t *Data){
  * is a multiple of sizeof(uint32_t).
  */
 bool EEPROM_Write(const EEPROM_Data_t *Data){
+
 	if(Data==NULL){
 		return false;
 	}
@@ -35,6 +41,14 @@ bool EEPROM_Write(const EEPROM_Data_t *Data){
 		Wait_CCIF();
 		Destination[i]=source[i];
 		Wait_CCIF();
+		//check FPVIOL/ACCER/RDCOLERR/MGSTAT0 flag
+		if(	(IP_FTFC->FSTAT)&((1<<FTFC_FSTAT_BIT_FPVIOL) |
+			    		(1 << FTFC_FSTAT_BIT_MGSTAT0)    |
+			    		(1<<FTFC_FSTAT_BIT_ACCERR)       |
+						 (1<<FTFC_FSTAT_BIT_RDCOLERR)))
+		                  {
+			    	         return false;
+			              }
 	}
 
     return true;
@@ -123,21 +137,30 @@ bool EEPROM_Partition(void){
 }
 
 static void Wait_CCIF(void ){
-
+	CCIF_TIMEOUT_FLAG=SET;
 	  while(!((IP_FTFC->FSTAT>>FTFC_FSTAT_BIT_CCIF)&(0x01))){
-
+             if(CCIF_TIMEOUT_COUNT>TICK_COUNT_5SEC){
+            	 CCIF_TIMEOUT_COUNT=0;
+            	 CCIF_TIMEOUT_FLAG=RESET;
+            	break ;
+             }
 	    	}
-
-
+	CCIF_TIMEOUT_FLAG=RESET;
+	CCIF_TIMEOUT_COUNT=0;
 }
 
 static void Wait_EEERDY(void){
 
 	while(!((IP_FTFC->FCNFG>>FTFC_FCNFG_BIT_EEERDY )&(0x01))){
-
+		EEERDY_TIMEOUT_FLAG=SET;
+		if(EEERDY_TIMEOUT_COUNT>TICK_COUNT_5SEC){
+		    EEERDY_TIMEOUT_COUNT=0;
+			EEERDY_TIMEOUT_FLAG=RESET;
+		        break ;
+		             }
 	}
-
-
+	 EEERDY_TIMEOUT_FLAG=RESET;
+	 EEERDY_TIMEOUT_COUNT=0;
 }
 static bool Config_Ram_Operation(void ){
 

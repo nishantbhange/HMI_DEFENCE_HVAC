@@ -46,4 +46,7 @@ void DelayUs(uint32_t us);
 void DelayMs(uint32_t ms);
 void Systick_Init(uint32_t Load_Value , bool CLKSOURCE , bool SysTick_EXCEPTION );
 
+extern volatile bool LPIT_Timeout_Flag;
+extern volatile uint32_t LPIT_Timeout_Count;
+
 #endif /* DELAY_H_ */

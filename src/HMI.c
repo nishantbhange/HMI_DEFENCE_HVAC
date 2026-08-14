@@ -31,7 +31,7 @@
  static void update_state_HPSW_Error(void );
  static void update_state_LPSW_Error(void );
  static void update_state_OC_Error(void );
- static bool Check_Errors_Clear(ErrorCode_t code );
+
 
  static void LPSW_Error_Handler(bool Error_Set_Reset );
  static void HPSW_Error_Handler(bool Error_Set_Reset );
@@ -50,12 +50,14 @@
 
 	    	                    if(HMI.status==AC_on){
 	    							HMI.status=AC_off;
-	    							PINS_DRV_ClearPins(IP_PTE,1U<<PIN_BLC);
+	    							Backlight_Cntrl(OFF);
+
 	    							//turn off the ac .
 	    							}
 	    						else if(HMI.status==AC_off){
 	    							HMI.status=AC_on;
-	    							 PINS_DRV_SetPins(IP_PTE,1U<<PIN_BLC);
+	    							Backlight_Cntrl(ON);
+
 	    							//turn on the ac .
 
 	    						}
@@ -133,15 +135,24 @@
 		                   //turn off compressor call error handler and do troubleshooting steps push error logs into eeprom !!
 		                   //push error flags into EEprom too
 		                   HMI.error_flag=error_flag_set;
-		                   HMI.Compressor_Error_State=Compressor_on;
+
 		                   EEPROM.Error_Present=HMI.error_flag;
 		                   EEPROM.ErrorCode=Current_Error;
-		                   Error_Handler();
+		                   EEPROM.Active_Errors=HMI.Active_Errors;
+		                   for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
+		                	   EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
+		                   }
+
+
 			 	 	 	    break;
 	 case Event_Error_Clear :
 		                  HMI.error_flag=error_flag_reset;
 	                      EEPROM.Error_Present=HMI.error_flag;
-	                      Error_Handler();
+	                      EEPROM.Active_Errors=HMI.Active_Errors;
+	                      for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
+	                     		EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
+	                     		                   }
+
 
 		                    break;
 	 default:
@@ -200,11 +211,7 @@
 		Led_Cntrl(Compressor,Compressor_off);
 		Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 
-
-
 		}
-
-
 	}
 
 
@@ -440,6 +447,7 @@ else{
 }
 
  void HMI_Init(HMI_t *HMI ){
+	Backlight_Cntrl(ON);
 	 // pull whatever is currently in FlexRAM
 	EEPROM_Read(&First_EEPROM_Data);
 	if(!EEPROM_Is_Valid(&First_EEPROM_Data)){
@@ -458,7 +466,7 @@ else{
     HMI->error_flag=error_flag_reset;
 
     // push defaults into the RAM shadow
-    EEPROM.Magic_No = MAGIC_NO;
+
     EEPROM.Set_Temp = HMI->set_temp;
     EEPROM.AC_State = HMI->status;
     EEPROM.Curr_Mode = HMI->mode;
@@ -468,6 +476,7 @@ else{
     EEPROM.heater_state = HMI->heater_state;
     EEPROM.vent_state = HMI->vent_state;
     EEPROM.Error_Present = HMI->error_flag;
+    EEPROM.Magic_No = MAGIC_NO;
     EEPROM_Write(&EEPROM);
     }
 	else{
@@ -655,11 +664,36 @@ void SysTick_Handler(void){
 	else if(Check_Status_Flag){
 		Compressor_Overcurrent_Time_ms++;
 	}
-	else{
+	else if((HMI.Active_Errors>>ADC_Active_Error_Bit)&0x01){
 
 		Systick_Tick_Count_ADC_Error++;
 
 	}
+
+	if(CCIF_TIMEOUT_FLAG){
+		CCIF_TIMEOUT_COUNT++;
+	}
+	if(EEERDY_TIMEOUT_FLAG){
+		EEERDY_TIMEOUT_COUNT++;
+		}
+	if(LPIT_Timeout_Flag){
+		LPIT_Timeout_Count++;
+		}
+	if(ADC_Init_Timeout_Flag){
+		ADC_Init_Timeout_Count++;
+		}
+	if(ADC_Bsy_Timeout_Flag){
+		ADC_Bsy_Timeout_Count++;
+		}
+	if(ADC_Timeout_Flag){
+		ADC_Timeout_Count++;
+			}
+	if(EEPROM_Timeout_Flag){
+		EEPROM_Timeout_Count++;
+				}
+
+
+
 }
 
 void Error_Handler( void  ){
@@ -680,7 +714,7 @@ if(Event==Event_Error){
 	       break ;
 
       default:
-    	  //if any extra error could be there implement it
+
     	  break ;
 	}
 
@@ -697,7 +731,7 @@ else if(Event==Event_Error_Clear){
 	case Error_ADC_Clear :
 		ADC_Error_Handler(Error_Reset);
 		break ;
-	case Error_Event_OC :
+	case Error_OC_Clear :
 		OC_Error_Handler(Error_Reset);
 		break ;
 
@@ -721,7 +755,7 @@ if(Error_Set_Reset==Error_Set){
 else if(Error_Set_Reset==Error_Reset){
 	HMI.Active_Errors&=~(1<<LPSW_Active_Error_Bit);
 	HMI.Active_Errors&=(Active_Error_Mask);
-	if(Check_Errors_Clear(Error_Event_LPSW)){
+	if(HMI.Active_Errors==0){
 	HMI.error_flag = error_flag_reset;
 
      if(Prev_Compressor_State==Compressor_on){
@@ -747,7 +781,7 @@ if(Error_Set_Reset==Error_Set){
 else if(Error_Set_Reset==Error_Reset){
 	HMI.Active_Errors&=~(1<<HPSW_Active_Error_Bit);
 	HMI.Active_Errors&=(Active_Error_Mask);
-	if(Check_Errors_Clear(Error_Event_HPSW)){
+	if(HMI.Active_Errors==0){
 	HMI.error_flag = error_flag_reset;
 	if(Prev_Compressor_State==Compressor_on){
 	HMI.compressor_state=Compressor_wait_to_on;
@@ -762,6 +796,7 @@ Update_Display(HMI);
 
 
 void ADC_Error_Handler(bool Error_Set_Reset ){
+	Systick_Tick_Count_ADC_Error=0;
 	if(Error_Set_Reset==Error_Set){
 		HMI.error_flag = error_flag_set;
 		HMI.Display_Error_Code[ADC_ERROR_INDEX]=Error_Event_ADC;
@@ -772,7 +807,7 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 	else if(Error_Set_Reset==Error_Reset){
 		HMI.Active_Errors&=~(1<<ADC_Active_Error_Bit);
 		HMI.Active_Errors&=(Active_Error_Mask);
-	if(Check_Errors_Clear(Error_Event_ADC)){
+	if(HMI.Active_Errors==0){
 		HMI.error_flag = error_flag_reset;
 	}
 	}
@@ -781,6 +816,7 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 }
 
 void OC_Error_Handler(bool Error_Set_Reset ){
+	//Compressor_Overcurrent_Time_ms=0;
 	if(Error_Set_Reset==Error_Set){
 		HMI.error_flag = error_flag_set;
 		HMI.Display_Error_Code[OC_ERROR_INDEX]=Error_Event_OC;
@@ -791,7 +827,7 @@ void OC_Error_Handler(bool Error_Set_Reset ){
 	else if(Error_Set_Reset==Error_Reset){
 		HMI.Active_Errors&=~(1<<OC_Active_Error_Bit);
 		HMI.Active_Errors&=(Active_Error_Mask);
-	if(Check_Errors_Clear(Error_Event_OC)){
+	if(HMI.Active_Errors==0){
 		HMI.error_flag = error_flag_reset;
 	}
 	}
@@ -1075,6 +1111,7 @@ static void update_state_OC_Error(void ){
 										}
 
 	    if(Compressor_Overcurrent_Time_ms>=TICK_COUNT_1MIN && HMI.Compressor_Error_State!=Compressor_off){
+	    	 Compressor_Overcurrent_Time_ms=0;
 	         HMI.Compressor_Error_State=Compressor_off;
 	         Relay_Cntrl(Compressor,Compressor_off);
 	         Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
@@ -1083,15 +1120,12 @@ static void update_state_OC_Error(void ){
 		}
 
 }
-
-static bool Check_Errors_Clear(ErrorCode_t code){
- for (uint8_t i=0; i<ERORR_COUNT;i++){
-	 if(HMI.Display_Error_Code[i]==code){
-		continue;
-	 }
-	 if(HMI.Display_Error_Code[i]<4){
-		 return 0;
-	 }
- }
- return 1;
+void Backlight_Cntrl(bool On_Off){
+if(On_Off){
+	PINS_DRV_SetPins(IP_PTE,1U<<PIN_BLC);
 }
+else{
+	PINS_DRV_ClearPins(IP_PTE,1U<<PIN_BLC);
+}
+}
+

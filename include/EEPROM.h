@@ -23,9 +23,16 @@
 #define SIM_FCFG1_BIT_EEERAMSIZE      16
 #define MAGIC_NO                      (0x0000F0F0U)
 #define FlexRAM_BASE_ADDR             (0x14000000U)
+#define TICK_COUNT_5SEC               5000U
+
+
+extern volatile bool CCIF_TIMEOUT_FLAG;
+extern volatile bool EEERDY_TIMEOUT_FLAG;
+extern volatile uint32_t CCIF_TIMEOUT_COUNT;
+extern volatile uint32_t EEERDY_TIMEOUT_COUNT;
 
 typedef struct{
-	uint32_t                Magic_No;
+
 	float                   Set_Temp;
 	Mode_t                  Curr_Mode;
 	Condenser_t             Condenser_state;
@@ -35,6 +42,9 @@ typedef struct{
 	Compressor_t            User_Compressor_state;
 	float                   Curr_Temp;
 	ErrorCode_t             ErrorCode ;
+	uint8_t                 Active_Errors;
+	ErrorCode_t             Display_Error_Code[ERORR_COUNT];
+	uint32_t                Magic_No;
 	bool                    Error_Present ;
 
 	//ERROR logs like error counts
