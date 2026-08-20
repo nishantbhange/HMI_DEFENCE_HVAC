@@ -54,7 +54,7 @@
 
 typedef enum
 {
-    ADC_TEMP_SENSOR     = 12,
+    ADC_TEMP_SENSOR     = 13,
     ADC_COMPRESSOR_CT   = 9,
     ADC_CONDENSER_CT    = 8,
     ADC_BLOWER_CT       = 15

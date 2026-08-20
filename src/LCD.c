@@ -14,6 +14,12 @@ void LCD_Init(void ){
 	 // uses 2 line and initialize 5*7 matrix of LCD
 	    LCD_Command((char)TWOLINES_5X8MATRIX);
 	    DelayUs(50);
+	 // uses 2 line and initialize 5*7 matrix of LCD
+	    LCD_Command((char)TWOLINES_5X8MATRIX);
+	    DelayUs(50);
+	 // uses 2 line and initialize 5*7 matrix of LCD
+	    LCD_Command((char)TWOLINES_5X8MATRIX);
+	    DelayUs(50);
 	 // clear display screen
 	    LCD_Command((char)CLEAR_DISPLAY);
 	    DelayMs(2);
@@ -74,8 +80,9 @@ void LCD_Command(char cmd){
     LCD_Write_Data(cmd);
     LCD_Write_Pin(LCD_RS, 0);
     LCD_Write_Pin(LCD_EN, 1);
-    DelayMs(1);
+    DelayUs(10);
     LCD_Write_Pin(LCD_EN, 0);
+    DelayUs(50);
 }
 
 void LCD_Char(char dat)
@@ -87,10 +94,11 @@ void LCD_Char(char dat)
 	// High-to-Low pulse on Enable pin to latch data
 	//EN=1;
 	 LCD_Write_Pin(LCD_EN, 1);
-	//MSdelay(1);
-	DelayMs(1);
+	//USdelay(10);
+	 DelayUs(10);
 	//EN=0;
 	LCD_Write_Pin(LCD_EN, 0);
+	DelayUs(50);
 
 }
 

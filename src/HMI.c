@@ -32,11 +32,20 @@
  static void update_state_LPSW_Error(void );
  static void update_state_OC_Error(void );
 
-
  static void LPSW_Error_Handler(bool Error_Set_Reset );
  static void HPSW_Error_Handler(bool Error_Set_Reset );
  static void ADC_Error_Handler(bool Error_Set_Reset );
  static void OC_Error_Handler(bool Error_Set_Reset );
+
+
+ typedef enum
+ {
+     DISPLAY_NORMAL,
+     DISPLAY_ERROR,
+     DISPLAY_OFF
+ } DisplayState_t;
+
+ static DisplayState_t Prev_Display_State;
 
 
 
@@ -121,6 +130,7 @@
 		 	 	 	        break;
 
 	 case Event_User_Compressor :
+		                    Systick_Tick_Count_User_State=0U;
 			 	 	        if(HMI.user_compressor_state==Compressor_on){
 			 	 		    HMI.user_compressor_state=Compressor_off;
 			 	 	                                  }
@@ -146,8 +156,11 @@
 
 			 	 	 	    break;
 	 case Event_Error_Clear :
+		                  if(HMI.Active_Errors==0){
 		                  HMI.error_flag=error_flag_reset;
+		                  }
 	                      EEPROM.Error_Present=HMI.error_flag;
+	                      EEPROM.ErrorCode=-1;
 	                      EEPROM.Active_Errors=HMI.Active_Errors;
 	                      for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
 	                     		EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
@@ -374,14 +387,45 @@ else{
 }
 
  void Update_Display(HMI_t HMI){
-	 if(HMI.error_flag!=error_flag_set&&HMI.status==AC_on){
+	 DisplayState_t Current_State;
+
+	 // determine the state
+	     if(HMI.error_flag!=error_flag_set&&HMI.status == AC_on)
+	     {
+	         Current_State = DISPLAY_NORMAL;
+	     }
+	     else if(HMI.status == AC_off)
+	     {
+	         Current_State = DISPLAY_OFF;
+	     }
+	     else
+	     {
+	         Current_State = DISPLAY_ERROR;
+	     }
+
+	     // THEN check whether the screen state changed
+
+	     if(Current_State != Prev_Display_State)
+	     {
+	         LCD_Clear();
+	         Prev_Display_State = Current_State;
+	         //forces screen to update display
+	         Prev_Mode      = -1;
+	         Prev_Set_Temp  = -1;
+	         Prev_Curr_Temp = -1;
+	     }
+
+   if(HMI.error_flag!=error_flag_set&&HMI.status==AC_on){
+		 Current_State=DISPLAY_NORMAL;
 	const char* Display_Mode;
 
 
    if(HMI.mode!=Prev_Mode){
+
+
 	if(HMI.mode==Auto_Mode){
 
-	Display_Mode="AUTO VENT MODE";
+	Display_Mode=" AUTO VENT MODE ";
 
 	}
 	else {
@@ -391,10 +435,11 @@ else{
 	}
 
 	Prev_Mode=HMI.mode;
+
 	LCD_String_XY(0, 0, Display_Mode);
    }
 
-   char Display_Temp[8];
+   char Display_Temp[10];
    if(HMI.set_temp!=Prev_Set_Temp){
 
 	snprintf(Display_Temp,sizeof(Display_Temp),"SET %d",(uint8_t)HMI.set_temp);
@@ -403,7 +448,7 @@ else{
 
    }
    if(HMI.curr_temp != Prev_Curr_Temp){
-	snprintf(Display_Temp,sizeof(Display_Temp),"AIR %d",(uint8_t)HMI.curr_temp);
+	snprintf(Display_Temp,sizeof(Display_Temp),"AIR %-3d",(int8_t)HMI.curr_temp);
 	LCD_String_XY(1, 8, Display_Temp);
 	Prev_Curr_Temp=HMI.curr_temp;
 
@@ -412,38 +457,13 @@ else{
 	 else if(HMI.status==AC_off){
 
 		 //BLC pin reset (brightness set to 0) so do nothing
-
+		 Current_State = DISPLAY_OFF;
 
 	 }
 	 else{
-/*
-		 char *Error_Code="Error";
-		 switch(HMI.Display_Error_Code){
-		 case Error_Event_LPSW :
-			Error_Code="LPSW_ERROR";
-			break ;
-		 case Error_Event_HPSW :
-			Error_Code="HPSW_ERROR";
-			break ;
-		 case Error_Event_ADC :
-			Error_Code="ADC_ERROR";
-			break ;
-		 default :
-		    break;
-		      }
-
-		 if(HMI.Display_Error_Code != Prev_Display_Error_Code){
-		    LCD_Clear();
-		    LCD_String_XY(0, 0, "ERROR");
-		    LCD_String_XY(1, 0, Error_Code);
-		    Prev_Display_Error_Code = HMI.Display_Error_Code;
-		     }
-*/
+		 Current_State = DISPLAY_ERROR;
 		 Error_Display_Handler();
-
-	 }
-
-
+         }
 }
 
  void HMI_Init(HMI_t *HMI ){
@@ -563,53 +583,62 @@ void Relay_Cntrl( Part_t part,bool Enable){
 
 
 void Led_Cntrl( Part_t part,bool Enable){
-
+//PTB7 -BLOWER
+//PTB6 -compressor
+//PTE3-condenser
+//PTD16-vent
+//PTD15-heater
 	switch(part){
 
 		case Condenser :
 			if(Enable){
-				PINS_DRV_ClearPins(IP_PTE , 1U<<3);
+				PINS_DRV_SetPins(IP_PTE , 1U<<3);
+
 			}
 			else{
-				PINS_DRV_SetPins(IP_PTE , 1U<<3);
+				PINS_DRV_ClearPins(IP_PTE , 1U<<3);
 			}
 
 		break ;
 
 		case Compressor :
 			if(Enable){
-				PINS_DRV_ClearPins(IP_PTB , 1U<<6);
+				PINS_DRV_SetPins(IP_PTB , 1U<<6);
+
 			}
 			else{
-				PINS_DRV_SetPins(IP_PTB , 1U<<6);
+				PINS_DRV_ClearPins(IP_PTB , 1U<<6);
 			}
 
 	    break ;
 		case Blower :
 			if(Enable){
-				PINS_DRV_ClearPins(IP_PTB , 1U<<7);
+				PINS_DRV_SetPins(IP_PTB , 1U<<7);
+
 			}
 			else{
-				PINS_DRV_SetPins(IP_PTB , 1U<<7);
+				PINS_DRV_ClearPins(IP_PTB , 1U<<7);
 			}
 
 		break ;
 
 		case Heater :
 			if(Enable){
-				PINS_DRV_ClearPins(IP_PTD , 1U<<15);
+				PINS_DRV_SetPins(IP_PTD , 1U<<15);
+
 			}
 			else{
-				PINS_DRV_SetPins(IP_PTD , 1U<<15);
+				PINS_DRV_ClearPins(IP_PTD , 1U<<15);
 			}
 		break ;
 
 		case Vent :
 			if(Enable){
-				PINS_DRV_ClearPins(IP_PTD , 1U<<16);
+				PINS_DRV_SetPins(IP_PTD , 1U<<16);
+
 			}
 			else{
-				PINS_DRV_SetPins(IP_PTD , 1U<<16);
+				PINS_DRV_ClearPins(IP_PTD , 1U<<16);
 			}
 		break ;
 
@@ -690,6 +719,9 @@ void SysTick_Handler(void){
 			}
 	if(EEPROM_Timeout_Flag){
 		EEPROM_Timeout_Count++;
+				}
+	if(EEPROM_Write_Timeout_Flag){
+		EEPROM_Write_Timeout_Count++;
 				}
 
 
@@ -881,7 +913,7 @@ void Error_Display_Handler(void)
     // Find an active error
     while (checked < 4U)
     {
-        if (HMI.Active_Errors & error_mask[error_index])
+        if (HMI.Active_Errors & (1U << error_index))
         {
             break;
         }
@@ -921,6 +953,7 @@ void Error_Display_Handler(void)
         {
             if (HMI.Active_Errors & error_mask[error_index])
             {
+
                 break;
             }
 

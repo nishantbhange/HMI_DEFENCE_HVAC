@@ -20,8 +20,8 @@
 *   bound by the applicable license terms, then you may not retain, install,
 *   activate or otherwise use the software.
 ==================================================================================================*/
-
-#include "Mcal.h"
+#include "Clock_Ip.h"
+#include "Port_Ci_Port_Ip.h"
 #include <stdint.h>
 #include <string.h>
 #include "HMI.h"
@@ -33,6 +33,7 @@
 
 
 
+
 #define SYSTICK_1MS_LOAD_VALUE   (CoreClockHz / 1000U - 1U)
 
 #define EEPROM_WRITE_QUIET_PERIOD_MS   5000U
@@ -40,8 +41,10 @@
 
  volatile bool ADC_Timeout_Flag;
  volatile uint32_t ADC_Timeout_Count;
+
  volatile bool EEPROM_Timeout_Flag;
  volatile uint32_t EEPROM_Timeout_Count;
+
  volatile bool EEPROM_Write_Timeout_Flag;
  volatile uint32_t EEPROM_Write_Timeout_Count;
 
@@ -64,7 +67,7 @@ static void System_Init(void);
 static void Process_Pending_Event(void);
 static void Service_EEPROM(void);
 static void Service_ADC(void);
-const char* Start_Msg1="WELCOME";
+const char* Start_Msg1="WELCOME :)";
 const char* Start_Msg2="TRANS ACNR";
 
 const char* Error_Msg1="WARNING EEPROM";
@@ -77,6 +80,7 @@ int main(void)
 {
     System_Init();
     //check if any of lpsw or hpsw is high at start .
+
     uint32_t values=PINS_DRV_ReadPins(IP_PTA);
     if((values>>SW_PIN_LPSW)&0x01){
     	Event=Event_Error;
@@ -87,15 +91,17 @@ int main(void)
     	Current_Error=Error_Event_HPSW;
         }
     LCD_Clear();
-    LCD_String_XY(0,4,Start_Msg1);
-    LCD_String_XY(1,3,Start_Msg2);
+    LCD_String_XY(0,3,Start_Msg1);
+    LCD_String_XY(1,2,Start_Msg2);
     DelayMs(Delay_5_SEC);
+    LCD_Clear();
     for(;;)
     {
+
     	//Check_OverCurrent();
         Process_Pending_Event();
         HMI.curr_temp = ADC_Data.Temp_Sensor_Val;
-        if(HMI.error_flag==error_flag_set){
+        if(HMI.error_flag!=error_flag_set){
         Update_Compressor_State((volatile HMI_t *)&HMI);
         }
 
@@ -115,6 +121,29 @@ int main(void)
 
 static void System_Init(void)
 {
+	 /* --- 1. Clock, before anything else touches a peripheral --- */
+	    Clock_Ip_Init(Clock_Ip_aClockConfig);      /* from your generated Clock_Ip_Cfg.c - see note below */
+
+	#if defined (FEATURE_CLOCK_IP_HAS_SPLL_CLK)
+	    uint32_t Pll_Lock_Timeout = PLL_LOCK_TIMEOUT_ITER;   /* pick a generous bounded value */
+	    while (CLOCK_IP_PLL_LOCKED != Clock_Ip_GetPllStatus())
+	    {
+	        if (--Pll_Lock_Timeout == 0U)
+	        {
+	            /* PLL never locked - same class of problem as your other
+	             * *_Timeout_Flag guards. Decide a fallback here (e.g. stay on
+	             * FIRC / flag a fault) rather than hanging forever. */
+	            break;
+	        }
+	    }
+	    Clock_Ip_DistributePll();
+	#endif
+
+	    /* --- 2. Pin muxing, before any driver touches a pin --- */
+	    Port_Ci_Port_Ip_Init(NUM_OF_CONFIGURED_PINS_PortContainer_0_BOARD_InitPeripherals,
+	    		g_pin_mux_InitConfigArr_PortContainer_0_BOARD_InitPeripherals);
+
+
 	// Loads defaults or restores from EEPROM, and copies the EEPROM into EEPROM_Last_Written
     HMI_Init((HMI_t *)&HMI);
     //Snapshot what HMI_Init just settled on/restored, so the very first loop pass doesn't immediately treat it as a pending change.
@@ -125,6 +154,7 @@ static void System_Init(void)
 
     LPIT_Init();
 
+    Interrupt_Init();
     LCD_Init();
     LCD_Clear();
 
@@ -142,6 +172,7 @@ static void System_Init(void)
     	 LCD_String_XY(1,0,Error_Msg3);
     	 EEPROM_Timeout_Flag=RESET;
     	 EEPROM_Timeout_Count=0;
+    	 break;
     }
     }
 
@@ -159,13 +190,14 @@ static void System_Init(void)
       	 LCD_String_XY(1,0,Error_Msg3);
       	 ADC_Timeout_Flag=RESET;
       	 ADC_Timeout_Count=0;
+      	 break;
       }
       }
 
 
 
 
-    Interrupt_Init();
+
 
     Event = Event_NONE;
 
@@ -204,21 +236,19 @@ static void Service_EEPROM(void)
             // Just became dirty - start the quiet-period timer
             EEPROM_Dirty       = true;
             EEPROM_Dirty_Since = Global_Tick_Count;
-        }
-        else
-        {
+          }
+           else
+             {
             // Still changing - keep pushing the timer out so a burst of
             // rapid changes doesn't write mid-burst
             EEPROM_Dirty_Since = Global_Tick_Count;
-        }
-        return;
+       }
+           return;
     }
 
     // Data is currently stable (matches last snapshot)commit it to flash
-    if(EEPROM_Dirty && ((Global_Tick_Count - EEPROM_Dirty_Since) >= EEPROM_WRITE_QUIET_PERIOD_MS))
-    {
-
-
+      if(EEPROM_Dirty && ((Global_Tick_Count - EEPROM_Dirty_Since) >= EEPROM_WRITE_QUIET_PERIOD_MS))
+      {
 
     	EEPROM_Write_Timeout_Flag=SET;
           while(EEPROM_Write_Timeout_Count<=TICK_COUNT_100MS){
@@ -234,11 +264,9 @@ static void Service_EEPROM(void)
           	 LCD_String_XY(1,0,Error_Msg4);
           	EEPROM_Write_Timeout_Flag=RESET;
           	EEPROM_Write_Timeout_Count=0;
+          	 break;
           }
           }
-
-
-
         EEPROM_Last_Written = EEPROM;
         EEPROM_Dirty        = false;
     }

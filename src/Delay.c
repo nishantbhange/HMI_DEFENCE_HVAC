@@ -6,7 +6,7 @@
  */
 #include "Delay.h"
 #include "HMI.h"
-
+#define LPIT0_CLRTEN_BIT_CLRTEN0   0
 uint32_t Tick_Count=0;
 static void Load_counter(uint32_t Load_Value);
 
@@ -16,12 +16,16 @@ volatile bool LPIT_Timeout_Flag;
 void LPIT_Init(void){
 	IP_LPIT0->MCR=(1<<LPIT0_MCR_BIT_DBG_EN)|
 			      (1<<LPIT0_MCR_BIT_M_CEN);
+	volatile uint32_t i;
+	for(i=0 ;i<5 ;i++);//its alot more than 4 cycles ik so pls stfu 5 looks good !!
+	IP_LPIT0->CLRTEN=(1<<LPIT0_CLRTEN_BIT_CLRTEN0);
 	//IP_LPIT0->MIER=(1<<LPIT0_MIER_BIT_TIE0);
 	IP_LPIT0->TMR[0].TCTRL =(1<<LPIT0_TCTRL0_BIT_TSOI)|
 							 (1<<LPIT0_TCTRL0_BIT_TRG_SRC);
 }
 
 static void Load_counter(uint32_t Load_Value){
+	IP_LPIT0->CLRTEN=(1<<LPIT0_CLRTEN_BIT_CLRTEN0);
 	IP_LPIT0->MSR =(1<<LPIT0_MSR_BIT_TIF0);
 	IP_LPIT0->TMR[0].TVAL=Load_Value;
 	IP_LPIT0->SETTEN=(1<<LPIT0_SETTEN_BIT_SETEN0);
@@ -43,6 +47,7 @@ uint32_t Ticks = (uint32_t)(((uint64_t)SCG_SIRC_DIV2_clock * us) / 1000000U);
 	while(!(IP_LPIT0->MSR & 0x01)){
 		LPIT_Timeout_Flag=SET;
 		if(LPIT_Timeout_Count>TICK_COUNT_5SEC){
+			IP_LPIT0->CLRTEN = (1<<LPIT0_CLRTEN_BIT_CLRTEN0);
 			LPIT_Timeout_Count=0;
 			LPIT_Timeout_Flag=RESET;
 			break ;

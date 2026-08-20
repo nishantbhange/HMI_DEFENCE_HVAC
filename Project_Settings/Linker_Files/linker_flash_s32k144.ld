@@ -117,7 +117,7 @@ SECTIONS
     .ARM.exidx :
     {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    }> int_sram
+    } > int_sram
     . = ALIGN(4);
     PROVIDE(__exidx_end = .);
 

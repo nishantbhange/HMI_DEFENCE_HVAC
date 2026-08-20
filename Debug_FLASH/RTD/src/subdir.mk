@@ -21,12 +21,14 @@ C_SRCS += \
 ../RTD/src/Clock_Ip_Specific.c \
 ../RTD/src/Det.c \
 ../RTD/src/Det_stub.c \
+../RTD/src/Gpio_Dio_Ip.c \
 ../RTD/src/OsIf_Interrupts.c \
 ../RTD/src/OsIf_Software_Semaphore.c \
 ../RTD/src/OsIf_Timer.c \
 ../RTD/src/OsIf_Timer_System.c \
 ../RTD/src/OsIf_Timer_System_Internal_Systick.c \
 ../RTD/src/Port_Ci_Port_Ip.c \
+../RTD/src/SchM_Dio.c \
 ../RTD/src/SchM_Mcu.c \
 ../RTD/src/SchM_Port.c 
 
@@ -48,12 +50,14 @@ OBJS += \
 ./RTD/src/Clock_Ip_Specific.o \
 ./RTD/src/Det.o \
 ./RTD/src/Det_stub.o \
+./RTD/src/Gpio_Dio_Ip.o \
 ./RTD/src/OsIf_Interrupts.o \
 ./RTD/src/OsIf_Software_Semaphore.o \
 ./RTD/src/OsIf_Timer.o \
 ./RTD/src/OsIf_Timer_System.o \
 ./RTD/src/OsIf_Timer_System_Internal_Systick.o \
 ./RTD/src/Port_Ci_Port_Ip.o \
+./RTD/src/SchM_Dio.o \
 ./RTD/src/SchM_Mcu.o \
 ./RTD/src/SchM_Port.o 
 
@@ -75,12 +79,14 @@ C_DEPS += \
 ./RTD/src/Clock_Ip_Specific.d \
 ./RTD/src/Det.d \
 ./RTD/src/Det_stub.d \
+./RTD/src/Gpio_Dio_Ip.d \
 ./RTD/src/OsIf_Interrupts.d \
 ./RTD/src/OsIf_Software_Semaphore.d \
 ./RTD/src/OsIf_Timer.d \
 ./RTD/src/OsIf_Timer_System.d \
 ./RTD/src/OsIf_Timer_System_Internal_Systick.d \
 ./RTD/src/Port_Ci_Port_Ip.d \
+./RTD/src/SchM_Dio.d \
 ./RTD/src/SchM_Mcu.d \
 ./RTD/src/SchM_Port.d 
 

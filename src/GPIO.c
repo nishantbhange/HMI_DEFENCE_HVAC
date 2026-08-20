@@ -30,7 +30,7 @@ static float Temp_k=0;
 }
   void PINS_DRV_TogglePins(GPIO_Type * const base , uint32_t pins)
 {
-	base->PTOR = pins;
+	base->PTOR= pins;
 }
 
   uint32_t PINS_DRV_ReadPins(GPIO_Type * const base)
@@ -63,9 +63,6 @@ static float Temp_k=0;
 	 //PTC3 -Heater Switch
 	 //PTC17 -ADC channel 15
 	 //PTC15 -ADC channel 12
-
-
-
 
 	 IP_PORTC->PCR[2] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	 IP_PORTC->PCR[2] |= PORT_PCR_IRQC(Rising_Edge);

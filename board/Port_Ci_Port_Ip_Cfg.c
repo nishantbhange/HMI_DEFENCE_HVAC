@@ -124,7 +124,7 @@ PortContainer_0_BOARD_InitPeripherals:
   - {pin_num: '27', peripheral: ADC0, signal: adc0_se15, pin_signal: PTC17, direction: INPUT, DFE: state_1}
   - {pin_num: '12', peripheral: PORTB, signal: 'port, 6', pin_signal: PTB6, direction: OUTPUT}
   - {pin_num: '13', peripheral: PORTE, signal: 'port, 3', pin_signal: PTE3, direction: OUTPUT}
-  - {pin_num: '14', peripheral: PORTD, signal: 'port, 16', pin_signal: PTD16, direction: OUTPUT}
+  - {pin_num: '14', peripheral: PORTD, signal: 'port, 16', pin_signal: PTD16, direction: OUTPUT, DFE: state_1}
   - {pin_num: '15', peripheral: PORTD, signal: 'port, 15', pin_signal: PTD15, direction: OUTPUT}
   - {pin_num: '16', peripheral: PORTE, signal: 'port, 9', pin_signal: PTE9, direction: OUTPUT}
   - {pin_num: '18', peripheral: PORTB, signal: 'port, 5', pin_signal: PTB5, direction: INPUT, DFE: state_1}
@@ -136,7 +136,6 @@ PortContainer_0_BOARD_InitPeripherals:
   - {pin_num: '29', peripheral: ADC0, signal: adc0_se13, pin_signal: PTC15, direction: INPUT, DFE: state_1}
   - {pin_num: '61', peripheral: PORTC, signal: 'port, 5', pin_signal: PTC5, direction: OUTPUT}
   - {pin_num: '59', peripheral: PORTE, signal: 'port, 1', pin_signal: PTE1, direction: OUTPUT}
-  - {pin_num: '58', peripheral: JTAG_TRACENOETM, signal: jtag_tdo_noetm_trace_swo, pin_signal: PTA10, direction: OUTPUT}
   - {pin_num: '57', peripheral: PORTA, signal: 'port, 11', pin_signal: PTA11, direction: OUTPUT}
   - {pin_num: '56', peripheral: PORTA, signal: 'port, 12', pin_signal: PTA12, direction: OUTPUT}
   - {pin_num: '55', peripheral: PORTA, signal: 'port, 13', pin_signal: PTA13, direction: OUTPUT}
@@ -177,17 +176,6 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .direction       = PORT_CI_PORT_PIN_OUT,
         .digitalFilter   = (boolean)FALSE,
         .initValue       = 0U,
-    },
-    {
-        .portBase        = IP_PORTA,
-        .gpioBase        = NULL_PTR,
-        .pinPortIdx      = 10U,
-        .pullConfig      = PORT_INTERNAL_PULL_NOT_ENABLED,
-        .driveStrength   = PORT_DRIVE_STRENGTH_HIGH,
-        .passiveFilter   = (boolean)FALSE,
-        .mux             = PORT_MUX_ALT7,
-        .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
-        .digitalFilter   = (boolean)FALSE,
     },
     {
         .portBase        = IP_PORTA,
@@ -516,7 +504,7 @@ Port_Ci_Port_Ip_PinSettingsConfig g_pin_mux_InitConfigArr_PortContainer_0_BOARD_
         .mux             = PORT_MUX_AS_GPIO,
         .lockRegister    = PORT_LOCK_REGISTER_DISABLED,
         .direction       = PORT_CI_PORT_PIN_OUT,
-        .digitalFilter   = (boolean)FALSE,
+        .digitalFilter   = (boolean)TRUE,
         .initValue       = 0U,
     },
     {

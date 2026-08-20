@@ -66,6 +66,8 @@ extern volatile bool ADC_Timeout_Flag;
 extern volatile uint32_t ADC_Timeout_Count;
 extern volatile bool EEPROM_Timeout_Flag;
 extern volatile uint32_t EEPROM_Timeout_Count;
+extern volatile bool EEPROM_Write_Timeout_Flag;
+extern volatile uint32_t EEPROM_Write_Timeout_Count;
 typedef enum{
 
   Auto_Mode ,
