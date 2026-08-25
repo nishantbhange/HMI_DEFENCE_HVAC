@@ -162,6 +162,7 @@
 	 case Event_Error_Clear :
 		                  if(HMI.Active_Errors==0){
 		                  HMI.error_flag=error_flag_reset;
+		                  Prev_Display_Error_Code = 0xFF;
 		                  }
 	                      EEPROM.Error_Present=HMI.error_flag;
 	                      EEPROM.ErrorCode=-1;
@@ -505,6 +506,7 @@ else{
  	         Prev_Set_Temp  = -1;
  	         Prev_Curr_Temp = -1;
  	         Prev_Manual_Remaining_Sec = 0xFFFFFFFFU;
+ 	         Prev_Display_Error_Code = 0xFF;
  	     }
 
     if(HMI.error_flag!=error_flag_set&&HMI.status==AC_on){
@@ -512,7 +514,7 @@ else{
  	const char* Display_Mode;
 
     if(HMI.mode!=Prev_Mode){
-
+    LCD_Clear();
  	if(HMI.mode==Auto_Mode){
  	Display_Mode=" AUTO VENT MODE ";
  	}
@@ -946,7 +948,7 @@ Update_Display(HMI);
 
 void ADC_Error_Handler(bool Error_Set_Reset ){
 
-	Systick_Tick_Count_ADC_Error=0;
+
 	if(Error_Set_Reset==Error_Set){
 		Prev_Compressor_State=HMI.compressor_state;
 		HMI.error_flag = error_flag_set;
@@ -959,6 +961,7 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 	else if(Error_Set_Reset==Error_Reset){
 		HMI.Active_Errors&=~(1<<ADC_Active_Error_Bit);
 		HMI.Active_Errors&=(Active_Error_Mask);
+		Systick_Tick_Count_ADC_Error=0;
 	if(HMI.Active_Errors==0){
 		HMI.error_flag = error_flag_reset;
 
@@ -1079,7 +1082,7 @@ void Error_Display_Handler(void)
 
         while (checked < 4U)
         {
-            if (HMI.Active_Errors & error_index)
+            if (HMI.Active_Errors & (1U << error_index))
             {
 
                 break;
@@ -1204,7 +1207,7 @@ static void update_state_HPSW_Error(void ){
 					HMI.condenser_state=Condenser_off;
 					Relay_Cntrl(Condenser,Condenser_off);
 					Led_Cntrl(Condenser,Condenser_off);
-
+	                                                  }
 					 //Vent off
 	if(HMI.vent_state!=Vent_off){
 					HMI.vent_state=Vent_off;
@@ -1229,7 +1232,7 @@ static void update_state_HPSW_Error(void ){
 						Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 						Led_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 
-										                                                  }
+
 }
 
 static void update_state_LPSW_Error(void ){
