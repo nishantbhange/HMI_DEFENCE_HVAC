@@ -143,7 +143,7 @@ void ADC0_IRQHandler(void){
 	                  if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
 		            	Event = Event_Error_Clear;
 		            	Current_Error = Error_OC_Clear;
-		            			            }
+		            	}
 
 		            }
 
@@ -331,9 +331,3 @@ void PORTE_IRQHandler(void){
 		 IP_PORTE->ISFR|=(1<<TEMP_DEC_FLAG);
 	}
 }
-
-
-
-
-
-

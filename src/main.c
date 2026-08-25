@@ -90,6 +90,8 @@ int main(void)
     	Event=Event_Error;
     	Current_Error=Error_Event_HPSW;
         }
+    //so that the temp sensor reads the data before Update_Heater_State and heater dosent turn on flasly at very first boot
+    Service_ADC();
     LCD_Clear();
     LCD_String_XY(0,3,Start_Msg1);
     LCD_String_XY(1,2,Start_Msg2);
@@ -103,16 +105,18 @@ int main(void)
         HMI.curr_temp = ADC_Data.Temp_Sensor_Val;
         if(HMI.error_flag!=error_flag_set){
         Update_Compressor_State((volatile HMI_t *)&HMI);
+        Update_Heater_State((volatile HMI_t *)&HMI);
         }
+
 
         Update_Output((volatile HMI_t *)&HMI);
 
         Update_Display(HMI);
         //write to EEPROM only after its been dirty and quiet for a while
         Service_EEPROM();
-
         // service next ADC channel in sequence if the ADC is free
         Service_ADC();
+
 
     }
 
@@ -143,38 +147,41 @@ static void System_Init(void)
 	    Port_Ci_Port_Ip_Init(NUM_OF_CONFIGURED_PINS_PortContainer_0_BOARD_InitPeripherals,
 	    		g_pin_mux_InitConfigArr_PortContainer_0_BOARD_InitPeripherals);
 
+	    Systick_Init(SYSTICK_1MS_LOAD_VALUE, SysTick_CTRL_CLKSOURCE_PROCESSOR_CLK, SysTick_EXCEPTION_EN);
+
+	    LPIT_Init();
+
+	    EEPROM_Timeout_Flag=SET;
+	    while(EEPROM_Timeout_Count<=TICK_COUNT_500MS){
+	    if(EEPROM_Init()){
+	    	EEPROM_Timeout_Flag=RESET;
+	    	EEPROM_Timeout_Count=0;
+	    break;
+	    }
+	    if(EEPROM_Timeout_Count>=TICK_COUNT_500MS){
+	    	//printf("Warning EEPROM init failed")
+	    	 LCD_Clear();
+	    	 LCD_String_XY(0,0,Error_Msg1);
+	    	 LCD_String_XY(1,0,Error_Msg3);
+	    	 EEPROM_Timeout_Flag=RESET;
+	    	 EEPROM_Timeout_Count=0;
+	    	 break;
+	    }
+	    }
+
 
 	// Loads defaults or restores from EEPROM, and copies the EEPROM into EEPROM_Last_Written
     HMI_Init((HMI_t *)&HMI);
     //Snapshot what HMI_Init just settled on/restored, so the very first loop pass doesn't immediately treat it as a pending change.
     EEPROM_Last_Written=EEPROM;
     EEPROM_Dirty=false;
-    //check if return value from all those init function has true return value
-    Systick_Init(SYSTICK_1MS_LOAD_VALUE, SysTick_CTRL_CLKSOURCE_PROCESSOR_CLK, SysTick_EXCEPTION_EN);
 
-    LPIT_Init();
+
 
     Interrupt_Init();
     LCD_Init();
     LCD_Clear();
 
-    EEPROM_Timeout_Flag=SET;
-    while(EEPROM_Timeout_Count<=TICK_COUNT_500MS){
-    if(EEPROM_Init()){
-    	EEPROM_Timeout_Flag=RESET;
-    	EEPROM_Timeout_Count=0;
-    break;
-    }
-    if(EEPROM_Timeout_Count>=TICK_COUNT_500MS){
-    	//printf("Warning ADC init failed")
-    	 LCD_Clear();
-    	 LCD_String_XY(0,0,Error_Msg1);
-    	 LCD_String_XY(1,0,Error_Msg3);
-    	 EEPROM_Timeout_Flag=RESET;
-    	 EEPROM_Timeout_Count=0;
-    	 break;
-    }
-    }
 
     ADC_Timeout_Flag=SET;
       while(ADC_Timeout_Count<=TICK_COUNT_500MS){

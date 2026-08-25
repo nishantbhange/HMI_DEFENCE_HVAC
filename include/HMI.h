@@ -61,6 +61,13 @@
 
 
 #define PIN_BLC                         9
+#define Heater_Cut_On_Temp                  16U
+#define Heater_Cut_Off_Temp                 24U
+
+#define TICK_COUNT_10SEC                    10000U
+//#define TICK_COUNT_3MINS                    180000U
+#define HEATER_HYSTERESIS                   2U
+#define SOLENOID_TEMP_BUFFER                0.5f
 
 extern volatile bool ADC_Timeout_Flag;
 extern volatile uint32_t ADC_Timeout_Count;
@@ -205,6 +212,7 @@ void Relay_Cntrl( Part_t part,bool Enable);
 void Led_Cntrl( Part_t part,bool Enable);
 void Error_Handler( void  );
 void Update_Compressor_State(HMI_t *HMI);
+void Update_Heater_State(HMI_t *HMI);
 
 void Backlight_Cntrl(bool On_Off);
 
