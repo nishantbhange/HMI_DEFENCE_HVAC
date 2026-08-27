@@ -31,7 +31,7 @@
 #include "EEPROM.h"
 #include "Delay.h"
 
-
+static EEPROM_Data_t EEPROM_Prev_Snapshot;
 
 
 #define SYSTICK_1MS_LOAD_VALUE   (CoreClockHz / 1000U - 1U)
@@ -174,6 +174,7 @@ static void System_Init(void)
     HMI_Init((HMI_t *)&HMI);
     //Snapshot what HMI_Init just settled on/restored, so the very first loop pass doesn't immediately treat it as a pending change.
     EEPROM_Last_Written=EEPROM;
+    EEPROM_Prev_Snapshot = EEPROM;
     EEPROM_Dirty=false;
 
 
@@ -233,51 +234,46 @@ static void Process_Pending_Event(void)
     Event = Event_NONE;
 }
 
+
 static void Service_EEPROM(void)
 {
-    // Did anything change since the last confirmed write?
-    if(memcmp((const void *)&EEPROM, (const void *)&EEPROM_Last_Written, sizeof(EEPROM_Data_t)) != 0)
+    // Did it change since we last looked (this pass vs the previous pass)?
+    if(memcmp((const void *)&EEPROM, (const void *)&EEPROM_Prev_Snapshot, sizeof(EEPROM_Data_t)) != 0)
     {
-        if(!EEPROM_Dirty)
-        {
-            // Just became dirty - start the quiet-period timer
-            EEPROM_Dirty       = true;
-            EEPROM_Dirty_Since = Global_Tick_Count;
-          }
-           else
-             {
-            // Still changing - keep pushing the timer out so a burst of
-            // rapid changes doesn't write mid-burst
-            EEPROM_Dirty_Since = Global_Tick_Count;
-       }
-           return;
+        EEPROM_Dirty       = true;
+        EEPROM_Dirty_Since = Global_Tick_Count;   // still actively changing - keep pushing the timer out
+        EEPROM_Prev_Snapshot = EEPROM;
+        return;
     }
 
-    // Data is currently stable (matches last snapshot)commit it to flash
-      if(EEPROM_Dirty && ((Global_Tick_Count - EEPROM_Dirty_Since) >= EEPROM_WRITE_QUIET_PERIOD_MS))
-      {
-
-    	EEPROM_Write_Timeout_Flag=SET;
-          while(EEPROM_Write_Timeout_Count<=TICK_COUNT_100MS){
-          if(EEPROM_Write((const EEPROM_Data_t *)&EEPROM)){
-        	  EEPROM_Write_Timeout_Flag=RESET;
-        	  EEPROM_Write_Timeout_Count=0;
-          break;
-          }
-          if(EEPROM_Write_Timeout_Count>=TICK_COUNT_100MS){
-          	//printf("Warning EEPROM WRITE failed")
-          	 LCD_Clear();
-          	 LCD_String_XY(0,0,Error_Msg1);
-          	 LCD_String_XY(1,0,Error_Msg4);
-          	EEPROM_Write_Timeout_Flag=RESET;
-          	EEPROM_Write_Timeout_Count=0;
-          	 break;
-          }
-          }
+    // It's held steady since the last pass - if it's also dirty relative to what's
+    // actually on flash, and has been quiet long enough, commit it
+    if(EEPROM_Dirty &&
+       memcmp((const void *)&EEPROM, (const void *)&EEPROM_Last_Written, sizeof(EEPROM_Data_t)) != 0 &&
+       ((Global_Tick_Count - EEPROM_Dirty_Since) >= EEPROM_WRITE_QUIET_PERIOD_MS))
+    {
+        EEPROM_Write_Timeout_Flag = SET;
+        while(EEPROM_Write_Timeout_Count <= TICK_COUNT_100MS){
+            if(EEPROM_Write((const EEPROM_Data_t *)&EEPROM)){
+                EEPROM_Write_Timeout_Flag  = RESET;
+                EEPROM_Write_Timeout_Count = 0;
+                break;
+            }
+            if(EEPROM_Write_Timeout_Count >= TICK_COUNT_100MS){
+                LCD_Clear();
+                LCD_String_XY(0,0,Error_Msg1);
+                LCD_String_XY(1,0,Error_Msg4);
+                EEPROM_Write_Timeout_Flag  = RESET;
+                EEPROM_Write_Timeout_Count = 0;
+                break;
+            }
+        }
         EEPROM_Last_Written = EEPROM;
         EEPROM_Dirty        = false;
     }
 }
+
+
 static void Service_ADC(void)
 {
     if(ADC_Ctrl.Status == ADC_FREE)

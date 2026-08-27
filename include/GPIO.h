@@ -93,6 +93,7 @@ typedef enum {
  void PINS_DRV_TogglePins(GPIO_Type * const base , uint32_t pins);
  uint32_t PINS_DRV_ReadPins(GPIO_Type * const base);
  void Interrupt_Init(void );
-
+ extern volatile uint32_t Press_Start_Tick;
+ extern volatile bool Long_Press_Flag ;
 
 #endif /* GPIO_H_ */

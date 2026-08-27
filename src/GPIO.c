@@ -3,7 +3,8 @@
 #include"ADC.h"
 #include"NVIC.h"
 #include <math.h>
-static volatile uint32_t Press_Start_Tick=0;
+ volatile uint32_t Press_Start_Tick=0;
+ volatile bool Long_Press_Flag=RESET ;
 volatile uint32_t Last_Tick[BTN_COUNT]={0};
 
 static float V_Temp=0;
@@ -252,11 +253,13 @@ if((flags>>TEMP_INC_FLAG)&0x01U){
 
 if((flags>>PWR_FLAG)&0x01U){
 		 //PWR interrupt handler
+
 		 Is_Pressed=(PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_PWR)&0x01;
 				if(Is_Pressed){
 
 				 if(Debounce_Check(BTN_PWR)){
 					 Press_Start_Tick=Global_Tick_Count;
+					 Long_Press_Flag=SET ;
 				         }
 				       }
 
@@ -268,13 +271,15 @@ if((flags>>PWR_FLAG)&0x01U){
 						}
 		                  if((Global_Tick_Count-Press_Start_Tick)>=LONG_PRESS_MS){
 		                	  //long press detected !! change current mode .
-		                	  Event=Event_Mode;
+
+		                	 // Event=Event_Mode;
 		                  }
 		                  else{
 		                	  //on or off the machine
 		                	  Event=Event_Machine_status;
 		                  }
 		                  Press_Start_Tick=0;
+		                  Long_Press_Flag=RESET;
 					}
 				}
 
@@ -331,3 +336,4 @@ void PORTE_IRQHandler(void){
 		 IP_PORTE->ISFR|=(1<<TEMP_DEC_FLAG);
 	}
 }
+

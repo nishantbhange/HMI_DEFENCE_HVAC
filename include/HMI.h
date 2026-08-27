@@ -26,14 +26,14 @@
 #define TICK_COUNT_5SEC            5000U
 
 
-#define MAX_TEMP             30
-#define MIN_TEMP             20
+#define MAX_TEMP             30U
+#define MIN_TEMP             20U
 
 #define Error_Set             1
 #define Error_Reset           0
 
 #define COMPRESSOR_CT_VAl_120x     2
-#define COMPRESSOR_CT_VAl_150x     3
+#define COMPRESSOR_CT_VAl_150x     1.4f
 #define COMPRESSOR_CT_VAl_200x     4
 
 #define TICK_COUNT_10MINS             600*1000U

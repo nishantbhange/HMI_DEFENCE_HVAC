@@ -9,6 +9,7 @@
 #include<stdbool.h>
 #include<ADC.h>
 #include<string.h>
+#include"GPIO.h"
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
  static uint32_t Systick_Tick_Count=0;
@@ -31,6 +32,8 @@
  static volatile uint32_t Compressor_Overcurrent_Time_ms=0;
  static void Error_Display_Handler(void);
  static volatile  uint32_t Systick_Tick_Count_ADC_Error =0;
+
+ static bool Forced_Flag=SET;
 
  static void update_state_ADC_Error(void );
  static void update_state_HPSW_Error(void );
@@ -114,6 +117,7 @@
 	 	 	                break;
 
 	   case Event_Blower :
+		                    Forced_Flag=RESET;
 	 	 	                if(HMI.Blower_state==Blower_on){
 	 	 		            HMI.Blower_state=Blower_off;
 
@@ -124,6 +128,7 @@
 	 	 	 	            break;
 
 	   case Event_User_Heater :
+		                    Forced_Flag=RESET;
 		 	 	            if(HMI.user_Heater_state==Heater_on){
 
 		 	 		        HMI.user_Heater_state=Heater_off;
@@ -138,6 +143,7 @@
 
 	 case Event_User_Compressor :
 		                    Systick_Tick_Count_User_State=0U;
+		                    Forced_Flag=RESET;
 			 	 	        if(HMI.user_compressor_state==Compressor_on){
 			 	 		    HMI.user_compressor_state=Compressor_off;
 			 	 	                                  }
@@ -366,10 +372,10 @@
 			 Manual_Mode_Count=0;
 			 Manual_Mode_Flag=RESET;
 			 HMI->mode=Auto_Mode;
-			 LCD_Clear();
+			 //LCD_Clear();
 
 			}
-		 Update_Display(*HMI);
+		// Update_Display(*HMI);
 		}
 
 	else{
@@ -398,25 +404,25 @@
 else{
              //error condition
              //ADC error -compressor on for 7 mins compressor off 3 mins do it in cycles
-			if(HMI->Display_Error_Code[ADC_ERROR_INDEX]==Error_Event_ADC){
+			if((HMI->Active_Errors>>ADC_Active_Error_Bit)&0x01){
 				//everything off except blower
 				update_state_ADC_Error();
 
 			}
 			//LPSW error -only blower on
-			else if(HMI->Display_Error_Code[LPSW_ERROR_INDEX]==Error_Event_LPSW){
+			else if((HMI->Active_Errors>>LPSW_Active_Error_Bit)&0x01){
 				//everything off except blower
 				update_state_LPSW_Error();
 
 			}
 			//HPSW error -only blower on
-			else if(HMI->Display_Error_Code[HPSW_ERROR_INDEX]==Error_Event_HPSW){
+			else if((HMI->Active_Errors>>HPSW_Active_Error_Bit)&0x01){
 				//everything off except blower
 				update_state_HPSW_Error();
 
 			}
 			//compressor overcurrent error-only blower on
-			else if(HMI->Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
+			else if((HMI->Active_Errors>>OC_Active_Error_Bit)&0x01){
 				//everything off except blower
 				update_state_OC_Error();
 
@@ -529,15 +535,20 @@ else{
  		 Current_State=DISPLAY_NORMAL;
  	const char* Display_Mode;
 
-    if(HMI.mode!=Prev_Mode){
+    if(HMI.mode!=Prev_Mode ||(HMI.mode==Manual_mode&&Forced_Flag==RESET) ){
     LCD_Clear();
  	if(HMI.mode==Auto_Mode){
- 	Display_Mode=" AUTO VENT MODE ";
+ 	Display_Mode="    AUTO MODE   ";
  	}
  	else {
- 	Display_Mode="MANUAL VENT MODE";
+ 		if(HMI.user_compressor_state==Compressor_on)
+ 	        Display_Mode=" FORCED COOLING ";
+ 		else if(HMI.user_Heater_state==Heater_on)
+ 			Display_Mode=" FORCED HEATING ";
+ 		else
+ 			Display_Mode=" FORCED BLOWER  ";
  	}
-
+ 	Forced_Flag=SET;
  	Prev_Mode=HMI.mode;
  	LCD_String_XY(0, 0, Display_Mode);
 
@@ -566,12 +577,12 @@ else{
     else { // Manual_mode
  	   uint32_t remaining_ms = (Manual_Mode_Count < TICK_COUNT_3MINS)
  	                             ? (TICK_COUNT_3MINS - Manual_Mode_Count) : 0U;
- 	   uint32_t remaining_sec = remaining_ms / 1000U;
+ 	   uint8_t remaining_sec = remaining_ms / 1000U;
 
  	   if(remaining_sec != Prev_Manual_Remaining_Sec){
- 		snprintf(Display_Buf,sizeof(Display_Buf),"TMR %02lu:%02lu",
- 		         (unsigned long)(remaining_sec/60U), (unsigned long)(remaining_sec%60U));
- 		LCD_String_XY(1, 0, Display_Buf);
+ 		snprintf(Display_Buf,sizeof(Display_Buf),"%03d",
+ 		         (uint8_t)(remaining_sec));
+ 		LCD_String_XY(1, 2, Display_Buf);
  		Prev_Manual_Remaining_Sec=remaining_sec;
  	   }
  	   if(HMI.curr_temp != Prev_Curr_Temp){
@@ -859,6 +870,12 @@ void SysTick_Handler(void){
 		Manual_Mode_Count++;
 					}
 
+	if((Global_Tick_Count-Press_Start_Tick)>=LONG_PRESS_MS && Long_Press_Flag==SET ){
+			           //long press detected !! change current mode .
+			           Event=Event_Mode;
+			           Long_Press_Flag=RESET;
+
+			                  }
 
 
 
@@ -935,7 +952,7 @@ else if(Error_Set_Reset==Error_Reset){
 	}
 	}
 }
-Update_Display(HMI);
+//Update_Display(HMI);
 
 }
 void HPSW_Error_Handler(bool Error_Set_Reset){
@@ -960,7 +977,7 @@ else if(Error_Set_Reset==Error_Reset){
 	}
 	}
 }
-Update_Display(HMI);
+//Update_Display(HMI);
 }
 
 
@@ -991,7 +1008,7 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 			}
 	}
 	}
-	Update_Display(HMI);
+	//Update_Display(HMI);
 
 }
 
@@ -1034,12 +1051,10 @@ void OC_Error_Handler(bool Error_Set_Reset ){
 		   HMI.compressor_state=Prev_Compressor_State;
 		            }
 
-
-
 	}
 	//HMI.Compressor_Error_State=Compressor_on;
 	}
-	Update_Display(HMI);
+	//Update_Display(HMI);
 
 }
 
@@ -1160,12 +1175,7 @@ static void update_state_ADC_Error(void ){
 						 Relay_Cntrl(Blower,Blower_on);
 						 Led_Cntrl(Blower,Blower_on);
 					}
-					//condenser off
-					if(HMI.condenser_state!=Condenser_off){
-						HMI.condenser_state=Condenser_off;
-					    Relay_Cntrl(Condenser,Condenser_off);
-						Led_Cntrl(Condenser,Condenser_off);
-									}
+
 
 				     //Vent off
 					if(HMI.vent_state!=Vent_on){
@@ -1235,12 +1245,7 @@ static void update_state_HPSW_Error(void ){
 					Relay_Cntrl(Blower,Blower_on);
 					Led_Cntrl(Blower,Blower_on);
    											}
-					//condenser off
-	if(HMI.condenser_state!=Condenser_off){
-					HMI.condenser_state=Condenser_off;
-					Relay_Cntrl(Condenser,Condenser_off);
-					Led_Cntrl(Condenser,Condenser_off);
-	                                                  }
+
 					 //Vent off
 	if(HMI.vent_state!=Vent_off){
 					HMI.vent_state=Vent_off;
@@ -1261,6 +1266,9 @@ static void update_state_HPSW_Error(void ){
 					Relay_Cntrl(Compressor,Compressor_off);
 					Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 					Led_Cntrl(Compressor,Compressor_off);
+					HMI.condenser_state=Condenser_off;
+					Relay_Cntrl(Condenser,Condenser_off);
+					Led_Cntrl(Condenser,Condenser_off);
 
 	}
 	 //solenoid valve off
@@ -1276,12 +1284,7 @@ static void update_state_LPSW_Error(void ){
 				    Relay_Cntrl(Blower,Blower_on);
 				    Led_Cntrl(Blower,Blower_on);
 									}
-					//condenser off
-	if(HMI.condenser_state!=Condenser_off){
-				    HMI.condenser_state=Condenser_off;
-				    Relay_Cntrl(Condenser,Condenser_off);
-				    Led_Cntrl(Condenser,Condenser_off);
-									}
+
 
 					//Vent off
 	if(HMI.vent_state!=Vent_off){
@@ -1303,6 +1306,9 @@ static void update_state_LPSW_Error(void ){
 					Relay_Cntrl(Compressor,Compressor_off);
 					Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 					Led_Cntrl(Compressor,Compressor_off);
+					HMI.condenser_state=Condenser_off;
+					Relay_Cntrl(Condenser,Condenser_off);
+					Led_Cntrl(Condenser,Condenser_off);
 						                          }
 	                //solenoid valve off
 					Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
