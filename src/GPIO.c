@@ -195,15 +195,15 @@ void PORTA_IRQHandler(void){
 	//PTA2 -HPSW
 	if((flags>>HPSW_FLAG)&0x01U){
 
-		//HPSW interrupt handler set the error flag
+	//HPSW interrupt handler set the error flag
 			if(Debounce_Check(BTN_HPSW)){
 				Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01;
-				//rising edge ->hpsw error has happened !!
+	//rising edge ->hpsw error has happened !!
 				              if(Is_Pressed){
 								 Event=Event_Error;
 								 Current_Error=Error_Event_HPSW;
 								                }
-			  //falling edge ->hpsw error has cleared !!
+	//falling edge ->hpsw error has cleared !!
 				              else{
 					            Event=Event_Error_Clear;
 					            Current_Error= Error_HPSW_Clear;
@@ -215,15 +215,15 @@ void PORTA_IRQHandler(void){
 			}
 	//PTA3 -LPSW
 	if((flags>>LPSW_FLAG)&0x01U){
-		//LPSW interrupt handler set the error flag
+	//LPSW interrupt handler set the error flag
 			if(Debounce_Check(BTN_LPSW)){
 				 Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_LPSW)&0x01;
-				 //rising edge ->lpsw error has happened !!
+	//rising edge ->lpsw error has happened !!
 				 if(Is_Pressed){
 						Event=Event_Error;
 					    Current_Error=Error_Event_LPSW;
 				                }
-	           //falling edge ->lpsw error has cleared !!
+	//falling edge ->lpsw error has cleared !!
 				 else {
 	               	Event=Event_Error_Clear;
 	               	Current_Error= Error_LPSW_Clear;
@@ -301,7 +301,7 @@ void PORTC_IRQHandler(void){
 			}
 	 if((flags>>HEATER_SW_FLAG)&0x01U){
 		 if(Debounce_Check(BTN_HEATER_SW)){
-					Event=Event_Heater;
+					Event=Event_User_Heater;
 				         }
    IP_PORTC->ISFR|=(1<<HEATER_SW_FLAG);
 

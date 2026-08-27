@@ -170,6 +170,7 @@ typedef struct{
 	Blower_state_t                    Blower_state;
 	Compressor_t                      compressor_state;
 	Compressor_t                      user_compressor_state;
+	Heater_t                          user_Heater_state;
 	Condenser_t                       condenser_state;
 	Heater_t                          heater_state;
 	Vent_t                            vent_state;
@@ -185,7 +186,7 @@ typedef enum {
 	Event_Increase_Temp,
 	Event_Decrease_Temp,
 	Event_Blower,
-	Event_Heater ,
+	Event_User_Heater ,
 	Event_User_Compressor,
 	Event_Error ,
 	Event_Error_Clear,
