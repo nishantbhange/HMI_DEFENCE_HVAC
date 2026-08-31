@@ -126,7 +126,7 @@ int main(void)
 static void System_Init(void)
 {
 	 /* --- 1. Clock, before anything else touches a peripheral --- */
-	    Clock_Ip_Init(Clock_Ip_aClockConfig);      /* from your generated Clock_Ip_Cfg.c - see note below */
+	    Clock_Ip_Init(Clock_Ip_aClockConfig);
 
 	#if defined (FEATURE_CLOCK_IP_HAS_SPLL_CLK)
 	    uint32_t Pll_Lock_Timeout = PLL_LOCK_TIMEOUT_ITER;   /* pick a generous bounded value */

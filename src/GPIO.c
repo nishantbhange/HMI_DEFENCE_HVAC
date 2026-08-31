@@ -7,6 +7,9 @@
  volatile bool Long_Press_Flag=RESET ;
 volatile uint32_t Last_Tick[BTN_COUNT]={0};
 
+
+
+
 static float V_Temp=0;
 static float R_Temp=0;
 static float Temp_k=0;
@@ -246,6 +249,7 @@ if((flags>>TEMP_INC_FLAG)&0x01U){
     // temperature increase interrupt handler
          if(Debounce_Check(BTN_TEMP_INC)){
             Event=Event_Increase_Temp;
+
          }
 
          IP_PORTB->ISFR|=(1<<TEMP_INC_FLAG);
@@ -300,6 +304,7 @@ void PORTC_IRQHandler(void){
 	 if((flags>>COMPRESSOR_SW_FLAG)&0x01U){
 		 if(Debounce_Check(BTN_COMPRESSOR_SW)){
 					Event=Event_User_Compressor;
+
 
 		         }
    IP_PORTC->ISFR|=(1<<COMPRESSOR_SW_FLAG);

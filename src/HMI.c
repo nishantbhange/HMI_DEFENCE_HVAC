@@ -13,7 +13,11 @@
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
  static uint32_t Systick_Tick_Count=0;
- static uint32_t Systick_Tick_Count_Solenoid=0;
+//It gates both the 5-second condenser-before-compressor stagger (COMPRESSOR_STAGGER_DELAY_MS)
+ //and the 10-second solenoid post-start hold (TICK_COUNT_10SEC) off the same counter
+
+
+ static uint32_t Systick_Tick_Count_Stagger=0;
  static uint32_t Systick_Tick_Count_User_State=0;
  static uint8_t Prev_Mode=(Mode_t)0xFF;
  static uint8_t Prev_Set_Temp=0xFF;
@@ -73,6 +77,8 @@
 	    							}
 	    						else if(HMI.status==AC_off){
 	    							HMI.status=AC_on;
+	    						    HMI.mode=Auto_Mode;
+	    						    HMI.compressor_state=Compressor_off;
 	    							Backlight_Cntrl(ON);
 
 	    							//turn on the ac .
@@ -80,18 +86,24 @@
 	    						}
 
 	                            EEPROM.AC_State=HMI.status;
+	                            EEPROM.Curr_Mode=HMI.mode;
 	                        break;
 
 	     case Event_Mode :
 	    	                        if(HMI.mode==Auto_Mode){
 	    		                           HMI.mode=Manual_mode;
+	    		                           HMI.Blower_state=Blower_on;
+	    		                           HMI.user_compressor_state=Compressor_off ;
+	    		                           HMI.user_Heater_state=Heater_off;
 
 	    	                                               }
 	    	                        else{
 	    		                           HMI.mode=Auto_Mode;
+	    		                           HMI.compressor_state=Compressor_off;
 	    		                           Manual_Mode_Flag=RESET;
 	    		                           Manual_Mode_Count=0;
 	    	                                               }
+	    	                         Systick_Tick_Count_Stagger=0;
 	    	                            EEPROM.Curr_Mode=HMI.mode;
 	    	                        break;
 
@@ -150,8 +162,9 @@
 			 	 	        else{
 			 	 		    HMI.user_compressor_state=Compressor_on;
 			 	 		    HMI.user_Heater_state=Heater_off;
+			 	 		    Systick_Tick_Count_Stagger=0U;
 			 	 	                                  }
-			 	 	        EEPROM.User_Compressor_state=HMI.compressor_state;
+			 	 	        EEPROM.User_Compressor_state=HMI.user_compressor_state;
 
 			 	 	        break;
 	 case Event_Error :
@@ -219,26 +232,32 @@
 					Led_Cntrl(Heater,Heater_off);
 		}
 					//Condenser fan follows the compressor
-					//stays energised through wait_to_on / on / wait_to_off, only drops with the compressor itself
+					//stays energised through on , only drops with the compressor itself
+			        //Compressor relay is only energised once fully ON - the wait_to_on/wait_to_off
+					//states are the 3-min short-cycle-protection buffers timed in SysTick_Handler
+
 					if(HMI->compressor_state==Compressor_on){
 						Relay_Cntrl(Condenser,Condenser_on);
 						Led_Cntrl(Condenser,Condenser_on);
+
+						if(Systick_Tick_Count_Stagger>=COMPRESSOR_STAGGER_DELAY_MS){
+							Relay_Cntrl(Compressor,Compressor_on);
+							Led_Cntrl(Compressor,Compressor_on);
+						}
+						else{
+							Relay_Cntrl(Compressor,Compressor_off);
+							Led_Cntrl(Compressor,Compressor_off);
+						}
 					}
 					else{
 						Relay_Cntrl(Condenser,Condenser_off);
 						Led_Cntrl(Condenser,Condenser_off);
-					}
-
-					//Compressor relay is only energised once fully ON - the wait_to_on/wait_to_off
-					//states are the 3-min short-cycle-protection buffers timed in SysTick_Handler
-					if(HMI->compressor_state==Compressor_on){
-						Relay_Cntrl(Compressor,Compressor_on);
-						Led_Cntrl(Compressor,Compressor_on);
-					}
-					else{
 						Relay_Cntrl(Compressor,Compressor_off);
 						Led_Cntrl(Compressor,Compressor_off);
 					}
+
+
+
 
 					//Solenoid valve
 					// - ON through the 3-min pre-start buffer, to build pressure ahead of compressor start
@@ -253,7 +272,7 @@
 							break;
 
 						case Compressor_on:
-							if(Systick_Tick_Count_Solenoid<TICK_COUNT_10SEC){
+							if(Systick_Tick_Count_Stagger<TICK_COUNT_10SEC){
 								Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
 							}
 							else{
@@ -323,6 +342,7 @@
 						Led_Cntrl(Blower,Blower_on);
 						HMI->user_Heater_state=Heater_on;
 						HMI->user_compressor_state=Compressor_off;
+						HMI->Blower_state=Blower_on;
 
 				}
 			else {
@@ -341,16 +361,27 @@
 							{
 				        Relay_Cntrl(Heater,Heater_off);
 						Led_Cntrl(Heater,Heater_off);
-						Relay_Cntrl(Compressor,Compressor_on);
-						Led_Cntrl(Compressor,Compressor_on);
-						Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
-						 //condenser on
+
+						 //condenser on immediately
 						Relay_Cntrl(Condenser,Condenser_on);
 						Led_Cntrl(Condenser,Condenser_on);
+
+						//compressor staggered behind it
+						if(Systick_Tick_Count_Stagger>=COMPRESSOR_STAGGER_DELAY_MS){
+							Relay_Cntrl(Compressor,Compressor_on);
+							Led_Cntrl(Compressor,Compressor_on);
+						}
+						else{
+							Relay_Cntrl(Compressor,Compressor_off);
+							Led_Cntrl(Compressor,Compressor_off);
+						}
+
+						Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 						Relay_Cntrl(Blower,Blower_on);
 						Led_Cntrl(Blower,Blower_on);
 						HMI->user_Heater_state=Heater_off;
 						HMI->user_compressor_state=Compressor_on;
+						HMI->Blower_state=Blower_on;
 
 
 				}
@@ -453,7 +484,7 @@ else{
 	    {
 	    	if(HMI->compressor_state==Compressor_on||HMI->compressor_state==Compressor_wait_to_on){
 	    		Systick_Tick_Count = 0U;
-	    		HMI->compressor_state = Compressor_wait_to_off;
+	    		HMI->compressor_state = Compressor_off;
 
 	    	}
 	    }
@@ -475,7 +506,7 @@ else{
 	        if (HMI->curr_temp <= Heater_Cut_On_Temp)
 	        {
 	            Heater_First_Boot = SET;
-	            //HMI->heater_state = Heater_on;
+
 	        }
 	        else
 	        return;
@@ -536,9 +567,9 @@ else{
  	const char* Display_Mode;
 
     if(HMI.mode!=Prev_Mode ||(HMI.mode==Manual_mode&&Forced_Flag==RESET) ){
-    LCD_Clear();
+    if(HMI.mode!=Prev_Mode )LCD_Clear();
  	if(HMI.mode==Auto_Mode){
- 	Display_Mode="    AUTO MODE   ";
+ 	Display_Mode="   AUTO MODE    ";
  	}
  	else {
  		if(HMI.user_compressor_state==Compressor_on)
@@ -547,8 +578,10 @@ else{
  			Display_Mode=" FORCED HEATING ";
  		else
  			Display_Mode=" FORCED BLOWER  ";
+
+ 		Forced_Flag=SET;
  	}
- 	Forced_Flag=SET;
+
  	Prev_Mode=HMI.mode;
  	LCD_String_XY(0, 0, Display_Mode);
 
@@ -577,7 +610,7 @@ else{
     else { // Manual_mode
  	   uint32_t remaining_ms = (Manual_Mode_Count < TICK_COUNT_3MINS)
  	                             ? (TICK_COUNT_3MINS - Manual_Mode_Count) : 0U;
- 	   uint8_t remaining_sec = remaining_ms / 1000U;
+ 	   uint16_t remaining_sec = remaining_ms / 1000U;
 
  	   if(remaining_sec != Prev_Manual_Remaining_Sec){
  		snprintf(Display_Buf,sizeof(Display_Buf),"%03d",
@@ -587,7 +620,7 @@ else{
  	   }
  	   if(HMI.curr_temp != Prev_Curr_Temp){
  		snprintf(Display_Buf,sizeof(Display_Buf),"AIR %-3d",(int8_t)HMI.curr_temp);
- 		LCD_String_XY(1, 9, Display_Buf);
+ 		LCD_String_XY(1, 8, Display_Buf);
  		Prev_Curr_Temp=HMI.curr_temp;
  	   }
     }
@@ -632,6 +665,7 @@ else{
     EEPROM.heater_state = HMI->heater_state;
     EEPROM.vent_state = HMI->vent_state;
     EEPROM.Error_Present = HMI->error_flag;
+    EEPROM.Active_Errors = HMI->Active_Errors;
     EEPROM.Magic_No = MAGIC_NO;
     EEPROM_Write(&EEPROM);
     }
@@ -644,12 +678,18 @@ else{
     HMI->condenser_state=First_EEPROM_Data.Condenser_state;
     HMI->user_compressor_state=Compressor_off ;
 	HMI->curr_temp=First_EEPROM_Data.Curr_Temp;
-    HMI->heater_state=First_EEPROM_Data.heater_state;
+    HMI->heater_state=Heater_off;
     HMI->vent_state=First_EEPROM_Data.vent_state;
     HMI->error_flag=First_EEPROM_Data.Error_Present;
     HMI->Blower_state=Blower_on;
     HMI->Compressor_Error_State=Compressor_on;
     HMI->user_Heater_state=Heater_off;
+    HMI->Active_Errors=First_EEPROM_Data.Active_Errors;
+    for(uint8_t i=0;i<ERORR_COUNT;i++){
+    	HMI->Display_Error_Code[i]=First_EEPROM_Data.Display_Error_Code[i];
+    }
+    HMI->compressor_state=Compressor_off;
+
 
     EEPROM = First_EEPROM_Data;
 
@@ -803,7 +843,7 @@ void SysTick_Handler(void){
 		if(HMI.compressor_state==Compressor_wait_to_on){
 		HMI.compressor_state=Compressor_on;
 		/* compressor has just switched ON - start the solenoid's 10s post-start hold (red note, row 13) */
-		Systick_Tick_Count_Solenoid=0U;
+		Systick_Tick_Count_Stagger=0U;
 
 	     }
 		else if(HMI.compressor_state==Compressor_wait_to_off){
@@ -818,14 +858,20 @@ void SysTick_Handler(void){
 	else if(HMI.compressor_state==Compressor_on){
 			/* keep counting while running so Update_Output can tell whether we're still
 			 * inside the 10s post-start solenoid hold window  */
-			if(Systick_Tick_Count_Solenoid<TICK_COUNT_10SEC){
-				Systick_Tick_Count_Solenoid++;
+			if(Systick_Tick_Count_Stagger<TICK_COUNT_10SEC){
+				Systick_Tick_Count_Stagger++;
 			}
 		}
 
 	}
 	else{
 		//manual mode
+		//manual mode
+				if(HMI.user_compressor_state==Compressor_on){
+					if(Systick_Tick_Count_Stagger<TICK_COUNT_10SEC){
+						Systick_Tick_Count_Stagger++;
+					}
+				}
 
 
 	}
@@ -876,9 +922,6 @@ void SysTick_Handler(void){
 			           Long_Press_Flag=RESET;
 
 			                  }
-
-
-
 
 }
 
@@ -991,6 +1034,9 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 		HMI.Active_Errors&=~(1<<ADC_Active_Error_Bit);
 		HMI.Active_Errors|=(1<<ADC_Active_Error_Bit);
 		HMI.Active_Errors&=(Active_Error_Mask);
+		if(HMI.Compressor_Error_State != Compressor_off  ){
+		    HMI.Compressor_Error_State = Compressor_off;
+		}
 
 	}
 	else if(Error_Set_Reset==Error_Reset){

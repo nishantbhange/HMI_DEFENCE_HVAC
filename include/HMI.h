@@ -59,6 +59,8 @@
 #define ADC_Active_Error_Bit            2U
 #define OC_Active_Error_Bit             3U
 
+#define COMPRESSOR_STAGGER_DELAY_MS         5000U
+
 
 #define PIN_BLC                         9
 #define Heater_Cut_On_Temp                  16U
