@@ -134,8 +134,8 @@ void ADC0_IRQHandler(void){
 		            ADC_Data.ADC_Condenser_Val = raw_voltage;
 		            break;
 		        case ADC_COMPRESSOR_CT:
-
-		            if( raw_voltage>=((HMI.OC_Current_Val)*25.0f)/12.0f){
+              //oc current value is a input from user in runtime !!
+		            if( raw_voltage>=((HMI.OC_Current_Val)*25.0f)/12.0f ){
 		            	Event=Event_Error;
 		            	Current_Error=Error_Event_OC;
 		            	Check_Status_Flag=SET;
@@ -155,7 +155,7 @@ void ADC0_IRQHandler(void){
 		            break;
 		        case ADC_TEMP_SENSOR:
 		            V_Temp = raw_voltage;
-		            if(V_Temp >= VREF-0.001f || V_Temp <= 0.001f){
+		            if(V_Temp >= VREF-0.001f || V_Temp <= 0.001f ){
 		                Event = Event_Error;
 		                Current_Error = Error_Event_ADC;
 		                break;
@@ -167,7 +167,7 @@ void ADC0_IRQHandler(void){
 		                break;
 		            }
 
-		            Temp_k = (T0 * Beta) / (Beta + T0 * logf(R_Temp / R0));
+		            Temp_k = (T0 * Beta) / (Beta + T0 * logf(R_Temp / R0) );
 		            if(Temp_k < 233.15f || Temp_k > 423.15f){
 		                Event = Event_Error;
 		                Current_Error = Error_Event_ADC;
