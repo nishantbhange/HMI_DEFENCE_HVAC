@@ -53,7 +53,7 @@ void LCD_String_XY(char row ,char position ,const char* msg){
 void LCD_Clear()
 {      //clear display screen
     	LCD_Command((char)CLEAR_DISPLAY);
-    	DelayMs(2);
+    	DelayMs(3);
 }
 
 void LCD_String(const char *msg)

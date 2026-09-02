@@ -8,8 +8,6 @@
 volatile uint32_t Last_Tick[BTN_COUNT]={0};
 
 
-
-
 static float V_Temp=0;
 static float R_Temp=0;
 static float Temp_k=0;
@@ -137,7 +135,7 @@ void ADC0_IRQHandler(void){
 		            break;
 		        case ADC_COMPRESSOR_CT:
 
-		            if( raw_voltage>=COMPRESSOR_CT_VAl_150x){
+		            if( raw_voltage>=((HMI.OC_Current_Val)*25.0f)/12.0f){
 		            	Event=Event_Error;
 		            	Current_Error=Error_Event_OC;
 		            	Check_Status_Flag=SET;
@@ -248,9 +246,11 @@ if((flags>>TEMP_INC_FLAG)&0x01U){
 
     // temperature increase interrupt handler
          if(Debounce_Check(BTN_TEMP_INC)){
-            Event=Event_Increase_Temp;
-
-         }
+        	 bool CompSw_Also_Held = (PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U;
+        	     if(!(CompSw_Also_Held && UI_State==UI_Normal)){
+        	         Event = Event_Increase_Temp;
+        	     }
+               }
 
          IP_PORTB->ISFR|=(1<<TEMP_INC_FLAG);
 	}
@@ -299,13 +299,15 @@ void PORTC_IRQHandler(void){
 	//PTC2 -compressor switch
 	//PTC3 -Heater Switch
 
+
 	uint32_t flags =IP_PORTC->ISFR;
 
 	 if((flags>>COMPRESSOR_SW_FLAG)&0x01U){
 		 if(Debounce_Check(BTN_COMPRESSOR_SW)){
-					Event=Event_User_Compressor;
-
-
+			 bool TempInc_Also_Held = (PINS_DRV_ReadPins(IP_PTB) >> TEMP_INC_FLAG) & 0x01U;
+		    if(!(TempInc_Also_Held && UI_State==UI_Normal)){
+		        Event = Event_User_Compressor;
+		    }
 		         }
    IP_PORTC->ISFR|=(1<<COMPRESSOR_SW_FLAG);
 			}

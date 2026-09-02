@@ -71,6 +71,18 @@
 #define HEATER_HYSTERESIS                   2U
 #define SOLENOID_TEMP_BUFFER                0.5f
 
+typedef enum { UI_Normal, UI_Preset_Edit } UI_State_t;
+extern volatile UI_State_t UI_State;
+
+#define PRESET_ENTRY_HOLD_MS   20000U   /* hold TEMP+ & COMP together 20 secs to enter */
+#define PRESET_EDIT_IDLE_MS     20000U   /* auto-exit after 20s of no key activity    */
+
+#define MAX_CURRENT_STEP          0.5f
+#define WAIT_TIME_STEP_MS         5000U
+#define OC_PRESET_PARAM_COUNT     2U
+
+void Process_Preset_Edit_Mode(void);     /* called once per main-loop iteration */
+
 extern volatile bool ADC_Timeout_Flag;
 extern volatile uint32_t ADC_Timeout_Count;
 extern volatile bool EEPROM_Timeout_Flag;
@@ -179,6 +191,8 @@ typedef struct{
 	error_flag_t                      error_flag;
 	ErrorCode_t                       Display_Error_Code[ERORR_COUNT];
 	bool                              Compressor_Error_State;
+	float                             OC_Current_Val;   /* replaces the fixed ceiling current value for compressor(it could be 1.5x , 2x we dont know !!) */
+	float                             OC_Time_Val;     /* replaces the fixed Time for which compressor wont turn off even under overcurrent case*/
 
 }HMI_t;
 
@@ -192,7 +206,8 @@ typedef enum {
 	Event_User_Compressor,
 	Event_Error ,
 	Event_Error_Clear,
-	Event_Machine_status
+	Event_Machine_status,
+	Event_Enter_Preset_Mode
 
 
 }HMI_Event_t;

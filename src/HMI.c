@@ -12,13 +12,15 @@
 #include"GPIO.h"
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
- static uint32_t Systick_Tick_Count=0;
+  static volatile uint32_t Systick_Tick_Count=0;
+
+
 //It gates both the 5-second condenser-before-compressor stagger (COMPRESSOR_STAGGER_DELAY_MS)
  //and the 10-second solenoid post-start hold (TICK_COUNT_10SEC) off the same counter
+  static volatile uint32_t Systick_Tick_Count_Stagger=0;
 
 
- static uint32_t Systick_Tick_Count_Stagger=0;
- static uint32_t Systick_Tick_Count_User_State=0;
+// static uint32_t Systick_Tick_Count_User_State=0;
  static uint8_t Prev_Mode=(Mode_t)0xFF;
  static uint8_t Prev_Set_Temp=0xFF;
  static ErrorCode_t Prev_Display_Error_Code = 0xFF;
@@ -38,6 +40,28 @@
  static volatile  uint32_t Systick_Tick_Count_ADC_Error =0;
 
  static bool Forced_Flag=SET;
+
+ static volatile bool     Preset_Combo_Active     = false;
+ static volatile uint32_t Preset_Combo_Start_Tick  = 0U;
+ static volatile bool     Preset_Combo_Fired       = false;
+
+ volatile UI_State_t UI_State=UI_Normal;
+
+ static uint8_t  Preset_Edit_Param = 0U;
+ static uint32_t Preset_Edit_Last_Activity_Tick = 0U;
+ static float    Edit_Max_Current;
+ static uint32_t Edit_Wait_Time_Ms;
+
+ static const char* Preset_Param_Name[OC_PRESET_PARAM_COUNT] = { "MAX CURRENT", "WAIT TIME  " };
+
+ static volatile bool Compressor_Min_On_Time_Flag=RESET ;
+ static volatile uint32_t Compressor_Min_On_Time_Tick_Count ;
+
+ static void Enter_Preset_Edit_Mode(void);
+ static void Handle_Preset_Edit_Event(HMI_Event_t CurrEvent);
+ static void Draw_Preset_Edit_Screen(void);
+ static void Exit_Preset_Edit_Mode(bool Save);
+ void Process_Preset_Edit_Mode(void);
 
  static void update_state_ADC_Error(void );
  static void update_state_HPSW_Error(void );
@@ -65,7 +89,15 @@
 	 if(CurrEvent==Event_NONE){
 		 return ;
 	 }
+	 if(UI_State == UI_Preset_Edit){
+	        Handle_Preset_Edit_Event(CurrEvent);
+	        return;
+	    }
 	switch(CurrEvent){
+
+	    case Event_Enter_Preset_Mode:
+	                             Enter_Preset_Edit_Mode();
+	                             break;
 
 	    case Event_Machine_status :
 
@@ -103,8 +135,10 @@
 	    		                           Manual_Mode_Flag=RESET;
 	    		                           Manual_Mode_Count=0;
 	    	                                               }
-	    	                         Systick_Tick_Count_Stagger=0;
+	    	                            Systick_Tick_Count_Stagger=0;
 	    	                            EEPROM.Curr_Mode=HMI.mode;
+	    	                            Compressor_Min_On_Time_Tick_Count=0;
+	    	                            Compressor_Min_On_Time_Flag=RESET ;
 	    	                        break;
 
 
@@ -154,7 +188,7 @@
 		 	 	 	        break;
 
 	 case Event_User_Compressor :
-		                    Systick_Tick_Count_User_State=0U;
+		                    //Systick_Tick_Count_User_State=0U;
 		                    Forced_Flag=RESET;
 			 	 	        if(HMI.user_compressor_state==Compressor_on){
 			 	 		    HMI.user_compressor_state=Compressor_off;
@@ -162,7 +196,9 @@
 			 	 	        else{
 			 	 		    HMI.user_compressor_state=Compressor_on;
 			 	 		    HMI.user_Heater_state=Heater_off;
+			 	 		    if(HMI.mode==Manual_mode){
 			 	 		    Systick_Tick_Count_Stagger=0U;
+			 	 		    }
 			 	 	                                  }
 			 	 	        EEPROM.User_Compressor_state=HMI.user_compressor_state;
 
@@ -194,7 +230,8 @@
 	                      for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
 	                     		EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
 	                     		                   }
-
+	                      Compressor_Min_On_Time_Tick_Count=0;
+	                      Compressor_Min_On_Time_Flag=RESET ;
 
 		                    break;
 	 default:
@@ -480,14 +517,19 @@ else{
 	            HMI->compressor_state = Compressor_wait_to_on;
 	        }
 	    }
-	    else if (HMI->curr_temp <= HMI->set_temp)
+	 //if initalily room temp was lower than set temp and user then increases the set temp this will trip the comp wait to on condition
+	 //an dset it to off
+	    else if (HMI->curr_temp <= HMI->set_temp && (Compressor_Min_On_Time_Tick_Count>=TICK_COUNT_3MINS || HMI->compressor_state!=Compressor_on ))
 	    {
 	    	if(HMI->compressor_state==Compressor_on||HMI->compressor_state==Compressor_wait_to_on){
 	    		Systick_Tick_Count = 0U;
 	    		HMI->compressor_state = Compressor_off;
+	    		Compressor_Min_On_Time_Tick_Count=0;
+	    		Compressor_Min_On_Time_Flag=RESET ;
 
 	    	}
 	    }
+
 	    else {
 	    	    	//Do nothing previous state is hold in hysterisis region
 	    	 }
@@ -534,6 +576,8 @@ else{
  }
 
  void Update_Display(HMI_t HMI){
+	 if(UI_State!=UI_Normal) return;
+
  	 DisplayState_t Current_State;
  	 static uint32_t Prev_Manual_Remaining_Sec = 0xFFFFFFFFU;
 
@@ -653,6 +697,8 @@ else{
     HMI->error_flag=error_flag_reset;
     HMI->Compressor_Error_State=Compressor_on;
     HMI->user_Heater_state=Heater_off;
+    HMI->OC_Current_Val=10.0f;
+    HMI->OC_Time_Val=60U;
 
     // push defaults into the RAM shadow
 
@@ -666,6 +712,8 @@ else{
     EEPROM.vent_state = HMI->vent_state;
     EEPROM.Error_Present = HMI->error_flag;
     EEPROM.Active_Errors = HMI->Active_Errors;
+    EEPROM.OC_Current_Val=HMI->OC_Current_Val;
+    EEPROM.OC_Time_Val=HMI->OC_Time_Val;
     EEPROM.Magic_No = MAGIC_NO;
     EEPROM_Write(&EEPROM);
     }
@@ -682,9 +730,11 @@ else{
     HMI->vent_state=First_EEPROM_Data.vent_state;
     HMI->error_flag=First_EEPROM_Data.Error_Present;
     HMI->Blower_state=Blower_on;
-    HMI->Compressor_Error_State=Compressor_on;
+    HMI->Compressor_Error_State=Compressor_off;
     HMI->user_Heater_state=Heater_off;
     HMI->Active_Errors=First_EEPROM_Data.Active_Errors;
+    HMI->OC_Current_Val=First_EEPROM_Data.OC_Current_Val;
+    HMI->OC_Time_Val=First_EEPROM_Data.OC_Time_Val;
     for(uint8_t i=0;i<ERORR_COUNT;i++){
     	HMI->Display_Error_Code[i]=First_EEPROM_Data.Display_Error_Code[i];
     }
@@ -844,6 +894,7 @@ void SysTick_Handler(void){
 		HMI.compressor_state=Compressor_on;
 		/* compressor has just switched ON - start the solenoid's 10s post-start hold (red note, row 13) */
 		Systick_Tick_Count_Stagger=0U;
+		Compressor_Min_On_Time_Flag=SET ;
 
 	     }
 		else if(HMI.compressor_state==Compressor_wait_to_off){
@@ -884,6 +935,12 @@ void SysTick_Handler(void){
 		Systick_Tick_Count_ADC_Error++;
 
 	}
+
+	if((HMI.Active_Errors>>ADC_Active_Error_Bit)&0x01){
+
+			Systick_Tick_Count_Stagger++;
+
+	}
 	if(Check_Status_Flag){
 			Compressor_Overcurrent_Time_ms++;
 		}
@@ -915,6 +972,9 @@ void SysTick_Handler(void){
 	if(Manual_Mode_Flag){
 		Manual_Mode_Count++;
 					}
+	if(Compressor_Min_On_Time_Flag==SET){
+		Compressor_Min_On_Time_Tick_Count++;
+						}
 
 	if((Global_Tick_Count-Press_Start_Tick)>=LONG_PRESS_MS && Long_Press_Flag==SET ){
 			           //long press detected !! change current mode .
@@ -922,6 +982,27 @@ void SysTick_Handler(void){
 			           Long_Press_Flag=RESET;
 
 			                  }
+
+	if(UI_State == UI_Normal){
+	    bool TempInc_Held = (PINS_DRV_ReadPins(IP_PTB) >> TEMP_INC_FLAG)      & 0x01U;
+	    bool CompSw_Held  = (PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U;
+
+	    if(TempInc_Held && CompSw_Held){
+	        if(!Preset_Combo_Active){
+	            Preset_Combo_Active    = true;
+	            Preset_Combo_Start_Tick = Global_Tick_Count;
+	        }
+	        else if(!Preset_Combo_Fired &&
+	                (Global_Tick_Count - Preset_Combo_Start_Tick) >= PRESET_ENTRY_HOLD_MS){
+	            Preset_Combo_Fired = true;
+	            Event = Event_Enter_Preset_Mode;
+	        }
+	    }
+	    else{
+	        Preset_Combo_Active = false;   /* release at any point -> clean reset, nothing to "clear" */
+	        Preset_Combo_Fired  = false;
+	    }
+	}
 
 }
 
@@ -1028,15 +1109,21 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 
 
 	if(Error_Set_Reset==Error_Set){
-		Prev_Compressor_State=HMI.compressor_state;
+
+        bool already_active = (HMI.Active_Errors & (1<<ADC_Active_Error_Bit)) != 0;
+
+        if(!already_active){
+            Prev_Compressor_State = HMI.compressor_state;
+            HMI.Compressor_Error_State = Compressor_off;
+        }
+
+
 		HMI.error_flag = error_flag_set;
 		HMI.Display_Error_Code[ADC_ERROR_INDEX]=Error_Event_ADC;
 		HMI.Active_Errors&=~(1<<ADC_Active_Error_Bit);
 		HMI.Active_Errors|=(1<<ADC_Active_Error_Bit);
 		HMI.Active_Errors&=(Active_Error_Mask);
-		if(HMI.Compressor_Error_State != Compressor_off  ){
-		    HMI.Compressor_Error_State = Compressor_off;
-		}
+
 
 	}
 	else if(Error_Set_Reset==Error_Reset){
@@ -1198,7 +1285,7 @@ void Error_Display_Handler(void)
             case Error_Event_ADC:
                 LCD_Clear();
                 LCD_String_XY(0, 5, "ERROR");
-                LCD_String_XY(1, 3, "ADC_ERROR");
+                LCD_String_XY(1, 0, " TEMP_SENS_ERROR");
                 break;
 
             case Error_Event_OC:
@@ -1216,19 +1303,12 @@ void Error_Display_Handler(void)
 }
 
 static void update_state_ADC_Error(void ){
-	if(HMI.Blower_state!=Blower_on){
+
 					     HMI.Blower_state=Blower_on;
 						 Relay_Cntrl(Blower,Blower_on);
 						 Led_Cntrl(Blower,Blower_on);
-					}
+                         Led_Cntrl(Vent,Vent_off);
 
-
-				     //Vent off
-					if(HMI.vent_state!=Vent_on){
-						HMI.vent_state=Vent_on;
-						//Relay_Cntrl(Vent,Vent_off);
-						Led_Cntrl(Vent,Vent_on);
-									}
 	                 //heater off
 					if(HMI.heater_state!=Heater_off || HMI.user_Heater_state!=Heater_off){
 						HMI.heater_state=Heater_off;
@@ -1248,27 +1328,49 @@ static void update_state_ADC_Error(void ){
 	            	   Relay_Cntrl(Condenser,Condenser_off);
 	            	   Led_Cntrl(Condenser,Condenser_off);
 	            	 	Systick_Tick_Count_ADC_Error=0;
+	            	 	Systick_Tick_Count_Stagger=0;
+
 	             }
 	               else if(Systick_Tick_Count_ADC_Error>=TICK_COUNT_3MINS&&HMI.Compressor_Error_State==Compressor_off){
 
-
-	            	HMI.Compressor_Error_State=Compressor_on;
+	            	if(Systick_Tick_Count_Stagger>=COMPRESSOR_STAGGER_DELAY_MS){
 	            	Relay_Cntrl(Compressor,Compressor_on);
-	            	Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 	            	Led_Cntrl(Compressor,Compressor_on);
-	            	HMI.condenser_state=Condenser_on;
+	            	 HMI.Compressor_Error_State=Compressor_on;
+
+	            	Systick_Tick_Count_ADC_Error=0;
+
+	            	}
+	            	else{
+	            	Relay_Cntrl(Compressor,Compressor_off);
+					Led_Cntrl(Compressor,Compressor_off);
+	            	}
+
+                    HMI.condenser_state=Condenser_on;
 	            	Relay_Cntrl(Condenser,Condenser_on);
 	            	Led_Cntrl(Condenser,Condenser_on);
-	            	Systick_Tick_Count_ADC_Error=0;
+
+
 	             }
 	               else{
 	            	   if(HMI.Compressor_Error_State==Compressor_off){
 	            	   Relay_Cntrl(Compressor,Compressor_off);
+	            		Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
 	            	   HMI.Compressor_Error_State=Compressor_off;
 	            	   HMI.condenser_state=Condenser_off;
 	            	  Relay_Cntrl(Condenser,Condenser_off);
 	            	  Led_Cntrl(Condenser,Condenser_off);
+	            	  Systick_Tick_Count_Stagger=0;
 	            	   }
+	            	   else {
+	            	           if(Systick_Tick_Count_Stagger>=TICK_COUNT_10SEC){
+	            	               Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+	            	           }
+	            	           else{
+	            	               Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
+	            	           }
+	            	       }
+
 
 	             }
 					}
@@ -1383,7 +1485,7 @@ static void update_state_OC_Error(void ){
 							Led_Cntrl(Heater,Heater_off);
 										}
 
-	    if(Compressor_Overcurrent_Time_ms>=TICK_COUNT_1MIN &&( HMI.Compressor_Error_State==Compressor_on )){
+	    if(Compressor_Overcurrent_Time_ms>=(HMI.OC_Time_Val*1000U) &&( HMI.Compressor_Error_State==Compressor_on )){
 	    	 Compressor_Overcurrent_Time_ms=0;
 	         HMI.Compressor_Error_State=Compressor_off;
 
@@ -1411,3 +1513,85 @@ else{
 }
 }
 
+
+
+static void Enter_Preset_Edit_Mode(void){
+    HMI.status = AC_off; HMI.compressor_state = Compressor_off;
+    HMI.heater_state = Heater_off; HMI.condenser_state = Condenser_off;
+    Relay_Cntrl(Compressor,Compressor_off);     Led_Cntrl(Compressor,Compressor_off);
+    Relay_Cntrl(Condenser,Condenser_off);       Led_Cntrl(Condenser,Condenser_off);
+    Relay_Cntrl(Heater,Heater_off);             Led_Cntrl(Heater,Heater_off);
+    Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+
+    Edit_Max_Current  = HMI.OC_Current_Val;
+    Edit_Wait_Time_Ms = HMI.OC_Time_Val;
+    Preset_Edit_Param    = 0U;
+    UI_State = UI_Preset_Edit;
+    Preset_Edit_Last_Activity_Tick = Global_Tick_Count;
+    Draw_Preset_Edit_Screen();
+}
+
+
+static void Handle_Preset_Edit_Event(HMI_Event_t CurrEvent){
+    Preset_Edit_Last_Activity_Tick = Global_Tick_Count;   /* any key = reset 20s idle clock */
+
+    switch(CurrEvent){
+        case Event_Increase_Temp:                          /* UP */
+            if(Preset_Edit_Param==0U) Edit_Max_Current  += MAX_CURRENT_STEP;
+            else                      Edit_Wait_Time_Ms += WAIT_TIME_STEP_MS;
+            break;
+        case Event_Decrease_Temp:                           /* DOWN */
+            if(Preset_Edit_Param==0U){
+            	if(Edit_Max_Current > MAX_CURRENT_STEP)    Edit_Max_Current  -= MAX_CURRENT_STEP;
+             }
+            else if(Edit_Wait_Time_Ms > WAIT_TIME_STEP_MS) Edit_Wait_Time_Ms -= WAIT_TIME_STEP_MS;
+            break;
+        case Event_User_Compressor:                          /* OK */
+            if(Preset_Edit_Param==0U){ Preset_Edit_Param=1U; }
+            else{ Exit_Preset_Edit_Mode(true); return; }
+            break;
+        default: return;
+    }
+    Draw_Preset_Edit_Screen();
+}
+
+static void Draw_Preset_Edit_Screen(void){
+    char buf[17];
+    LCD_Clear();
+    LCD_String_XY(0,3,Preset_Param_Name[Preset_Edit_Param]);
+        if(Preset_Edit_Param==0U){
+        	uint32_t current_int = (uint32_t)Edit_Max_Current;
+        	uint32_t current_dec = (uint32_t)((Edit_Max_Current - current_int) * 100.0f);
+            snprintf(buf,sizeof(buf),"%lu.%02lu Amp", (unsigned long)current_int ,(unsigned long)current_dec );
+        } else {
+            snprintf(buf,sizeof(buf),"%lu Sec", (unsigned long)(Edit_Wait_Time_Ms/1000U));
+        }
+        LCD_String_XY(1,3,buf);
+}
+
+static void Exit_Preset_Edit_Mode(bool Save){
+    if(Save){
+        HMI.OC_Current_Val     = Edit_Max_Current;
+        HMI.OC_Time_Val        = Edit_Wait_Time_Ms;
+        EEPROM.OC_Current_Val  = HMI.OC_Current_Val;
+        EEPROM.OC_Time_Val     = HMI.OC_Time_Val;
+        (void)EEPROM_Write((const EEPROM_Data_t *)&EEPROM);   // one-time factory value -> commit now
+    }
+    UI_State = UI_Normal;
+
+    HMI.status      = AC_on;
+    EEPROM.AC_State = HMI.status;
+    Backlight_Cntrl(ON);
+    Prev_Display_State=-1;
+    LCD_Clear();
+    Compressor_Min_On_Time_Tick_Count=0;
+   	Compressor_Min_On_Time_Flag=RESET ;
+
+}
+
+void Process_Preset_Edit_Mode(void){
+    if(UI_State != UI_Preset_Edit) return;
+    if((Global_Tick_Count - Preset_Edit_Last_Activity_Tick) >= PRESET_EDIT_IDLE_MS){
+        Exit_Preset_Edit_Mode(false);   // timeout -> discard, don't silently commit a half-set value
+    }
+}

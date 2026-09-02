@@ -116,6 +116,7 @@ int main(void)
         Service_EEPROM();
         // service next ADC channel in sequence if the ADC is free
         Service_ADC();
+        Process_Preset_Edit_Mode();
 
 
     }

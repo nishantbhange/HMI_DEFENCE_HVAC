@@ -44,6 +44,8 @@ typedef struct{
 	ErrorCode_t             ErrorCode ;
 	uint8_t                 Active_Errors;
 	ErrorCode_t             Display_Error_Code[ERORR_COUNT];
+	float                   OC_Current_Val;
+	float                   OC_Time_Val;
 	uint32_t                Magic_No;
 	bool                    Error_Present ;
 
