@@ -11,6 +11,7 @@ volatile uint32_t Last_Tick[BTN_COUNT]={0};
 static float V_Temp=0;
 static float R_Temp=0;
 static float Temp_k=0;
+static volatile float V_at_Rated_curr ;
 
 #define ADC_MAX     4095.0f
 #define VREF        5.0f
@@ -135,13 +136,48 @@ void ADC0_IRQHandler(void){
 		            break;
 		        case ADC_COMPRESSOR_CT:
               //oc current value is a input from user in runtime !!
-		            if( raw_voltage>=((HMI.OC_Current_Val)*25.0f)/12.0f ){
-		            	Event=Event_Error;
-		            	Current_Error=Error_Event_OC;
+		        	 V_at_Rated_curr=((HMI.OC_Current_Val)*12.0f)/75.0f;
+
+		            if( raw_voltage>= V_at_Rated_curr){
+
+		            	 if(Check_Status_Flag==RESET){
+		            	        Compressor_Overcurrent_Time_ms=0;   // only zero it the moment overcurrent begins
+		            	    }
+
 		            	Check_Status_Flag=SET;
+
+
+		            	if( raw_voltage<(1.5f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=HMI.OC_Time_Val)
+		            	{
+		            		Event=Event_Error;
+		            		Current_Error=Error_Event_OC;
+		            		Compressor_Overcurrent_Time_ms=0;
+		            		Check_Status_Flag=RESET;
+
+		            	}
+		            	else if( raw_voltage>=(1.5f*V_at_Rated_curr) && raw_voltage<(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_30SEC){
+
+		            		Event=Event_Error;
+		            		Current_Error=Error_Event_OC;
+		            		Compressor_Overcurrent_Time_ms=0;
+		            		Check_Status_Flag=RESET;
+
+		            	}
+		            	else if( raw_voltage>=(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_5SEC){
+
+		            		Event=Event_Error;
+		            		Current_Error=Error_Event_OC;
+		            		Compressor_Overcurrent_Time_ms=0;
+		            		Check_Status_Flag=RESET;
+
+		            		}
+
+
+
 		            }else{
 		            	ADC_Data.ADC_Compressor_Val = raw_voltage;
 		            	Check_Status_Flag=RESET;
+		            	Compressor_Overcurrent_Time_ms=0;
 	                  if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
 		            	Event = Event_Error_Clear;
 		            	Current_Error = Error_OC_Clear;

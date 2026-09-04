@@ -35,7 +35,7 @@
  static bool OC_Compressor_Tripped =RESET;
  volatile bool Manual_Mode_Flag=RESET;
  volatile uint32_t Manual_Mode_Count=0;
- static volatile uint32_t Compressor_Overcurrent_Time_ms=0;
+ volatile uint32_t Compressor_Overcurrent_Time_ms=0;
  static void Error_Display_Handler(void);
  static volatile  uint32_t Systick_Tick_Count_ADC_Error =0;
 
@@ -223,6 +223,7 @@
 		                  HMI.error_flag=error_flag_reset;
 		                  Prev_Display_Error_Code = 0xFF;
 		                  EEPROM.ErrorCode=-1;
+		                  Systick_Tick_Count=0U;
 		                  }
 	                      EEPROM.Error_Present=HMI.error_flag;
 
@@ -232,6 +233,14 @@
 	                     		                   }
 	                      Compressor_Min_On_Time_Tick_Count=0;
 	                      Compressor_Min_On_Time_Flag=RESET ;
+	                      if(HMI.mode!=Auto_Mode ){
+	                    	  HMI.mode=Auto_Mode;
+	                    	  HMI.compressor_state=Compressor_off;
+	                    	  Manual_Mode_Flag=RESET;
+	                    	  Manual_Mode_Count=0;
+	                    	  Systick_Tick_Count_Stagger=0;
+	                    	  EEPROM.Curr_Mode=HMI.mode;
+	                      }
 
 		                    break;
 	 default:
@@ -698,7 +707,7 @@ else{
     HMI->Compressor_Error_State=Compressor_on;
     HMI->user_Heater_state=Heater_off;
     HMI->OC_Current_Val=10.0f;
-    HMI->OC_Time_Val=60U;
+    HMI->OC_Time_Val=60000U;
 
     // push defaults into the RAM shadow
 
@@ -1157,8 +1166,7 @@ void OC_Error_Handler(bool Error_Set_Reset ){
 		else{
 		HMI.Compressor_Error_State=HMI.user_compressor_state;
 		}
-		Compressor_Overcurrent_Time_ms=0;
-		Check_Status_Flag=SET;
+
 
 		}
 		HMI.error_flag = error_flag_set;
@@ -1176,7 +1184,7 @@ void OC_Error_Handler(bool Error_Set_Reset ){
 		HMI.error_flag = error_flag_reset;
 		 if(OC_Compressor_Tripped){
 		// it really did run the full 1 min and got shut off - force a FULL fresh delay
-		   HMI.compressor_state=Compressor_wait_to_on;  // Systick_Tick_Count already zeroed at the trip itself
+		   HMI.compressor_state=Compressor_off;  // Systick_Tick_Count already zeroed at the trip itself
 		   OC_Compressor_Tripped=false;
 		            }
 		 else{
@@ -1408,10 +1416,14 @@ static void update_state_HPSW_Error(void ){
 					Led_Cntrl(Heater,Heater_off);
 													}
 					//compressor off
-	if(HMI.Compressor_Error_State!=Compressor_off || HMI.user_compressor_state!=Compressor_off){
+	if(HMI.Compressor_Error_State!=Compressor_off || HMI.user_compressor_state!=Compressor_off ||HMI.compressor_state!=Compressor_off){
 					HMI.Compressor_Error_State=Compressor_off;
 					HMI.user_compressor_state=Compressor_off;
+					HMI.compressor_state=Compressor_off;
+
+
 					Relay_Cntrl(Compressor,Compressor_off);
+					//Systick_Tick_Count=0;
 					Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 					Led_Cntrl(Compressor,Compressor_off);
 					HMI.condenser_state=Condenser_off;
@@ -1448,10 +1460,12 @@ static void update_state_LPSW_Error(void ){
 					Led_Cntrl(Heater,Heater_off);
 													}
 					//compressor off
-	if(HMI.Compressor_Error_State!=Compressor_off || HMI.user_compressor_state!=Compressor_off){
+	if(HMI.Compressor_Error_State!=Compressor_off || HMI.user_compressor_state!=Compressor_off ||HMI.compressor_state!=Compressor_off){
 					HMI.Compressor_Error_State=Compressor_off;
 					HMI.user_compressor_state=Compressor_off;
+					HMI.compressor_state=Compressor_off;
 					Relay_Cntrl(Compressor,Compressor_off);
+					//Systick_Tick_Count=0;
 					Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 					Led_Cntrl(Compressor,Compressor_off);
 					HMI.condenser_state=Condenser_off;
@@ -1485,12 +1499,12 @@ static void update_state_OC_Error(void ){
 							Led_Cntrl(Heater,Heater_off);
 										}
 
-	    if(Compressor_Overcurrent_Time_ms>=(HMI.OC_Time_Val*1000U) &&( HMI.Compressor_Error_State==Compressor_on )){
+	    if(HMI.Compressor_Error_State==Compressor_on ){
 	    	 Compressor_Overcurrent_Time_ms=0;
 	         HMI.Compressor_Error_State=Compressor_off;
 
 	         OC_Compressor_Tripped=true;
-	         Systick_Tick_Count=0U;
+	         //Systick_Tick_Count=0U;
 	         Relay_Cntrl(Compressor,Compressor_off);
 	         Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 	         Led_Cntrl(Compressor,Compressor_off);

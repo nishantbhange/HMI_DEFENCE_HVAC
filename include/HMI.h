@@ -24,6 +24,7 @@
 
 
 #define TICK_COUNT_5SEC            5000U
+#define TICK_COUNT_30SEC            30000U
 
 
 #define MAX_TEMP             30U
@@ -89,6 +90,7 @@ extern volatile bool EEPROM_Timeout_Flag;
 extern volatile uint32_t EEPROM_Timeout_Count;
 extern volatile bool EEPROM_Write_Timeout_Flag;
 extern volatile uint32_t EEPROM_Write_Timeout_Count;
+extern volatile uint32_t Compressor_Overcurrent_Time_ms;
 typedef enum{
 
   Auto_Mode ,
