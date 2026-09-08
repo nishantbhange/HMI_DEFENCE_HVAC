@@ -137,6 +137,7 @@
 	    	                                               }
 	    	                            Systick_Tick_Count_Stagger=0;
 	    	                            EEPROM.Curr_Mode=HMI.mode;
+	    	                            (void)EEPROM_Write((const EEPROM_Data_t *)&EEPROM);
 	    	                            Compressor_Min_On_Time_Tick_Count=0;
 	    	                            Compressor_Min_On_Time_Flag=RESET ;
 	    	                        break;
@@ -828,53 +829,59 @@ void Led_Cntrl( Part_t part,bool Enable){
 
 		case Condenser :
 			if(Enable){
-				PINS_DRV_SetPins(IP_PTE , 1U<<3);
+				PINS_DRV_ClearPins(IP_PTE , 1U<<3);
 
 			}
 			else{
-				PINS_DRV_ClearPins(IP_PTE , 1U<<3);
+
+				PINS_DRV_SetPins(IP_PTE , 1U<<3);
 			}
 
 		break ;
 
 		case Compressor :
 			if(Enable){
-				PINS_DRV_SetPins(IP_PTB , 1U<<6);
+				PINS_DRV_ClearPins(IP_PTB , 1U<<6);
+
 
 			}
 			else{
-				PINS_DRV_ClearPins(IP_PTB , 1U<<6);
+				PINS_DRV_SetPins(IP_PTB , 1U<<6);
 			}
 
 	    break ;
 		case Blower :
 			if(Enable){
-				PINS_DRV_SetPins(IP_PTB , 1U<<7);
+				PINS_DRV_ClearPins(IP_PTB , 1U<<7);
+
 
 			}
 			else{
-				PINS_DRV_ClearPins(IP_PTB , 1U<<7);
+				PINS_DRV_SetPins(IP_PTB , 1U<<7);
 			}
 
 		break ;
 
 		case Heater :
 			if(Enable){
-				PINS_DRV_SetPins(IP_PTD , 1U<<15);
+				PINS_DRV_ClearPins(IP_PTD , 1U<<15);
+
 
 			}
 			else{
-				PINS_DRV_ClearPins(IP_PTD , 1U<<15);
+				PINS_DRV_SetPins(IP_PTD , 1U<<15);
 			}
 		break ;
 
 		case Vent :
 			if(Enable){
-				PINS_DRV_SetPins(IP_PTD , 1U<<16);
+				PINS_DRV_ClearPins(IP_PTD , 1U<<16);
+
 
 			}
 			else{
-				PINS_DRV_ClearPins(IP_PTD , 1U<<16);
+				PINS_DRV_SetPins(IP_PTD , 1U<<16);
+
 			}
 		break ;
 
@@ -1193,9 +1200,9 @@ void OC_Error_Handler(bool Error_Set_Reset ){
 		            }
 
 	}
-	//HMI.Compressor_Error_State=Compressor_on;
+
 	}
-	//Update_Display(HMI);
+
 
 }
 
@@ -1363,6 +1370,7 @@ static void update_state_ADC_Error(void ){
 	               else{
 	            	   if(HMI.Compressor_Error_State==Compressor_off){
 	            	   Relay_Cntrl(Compressor,Compressor_off);
+	            	   Led_Cntrl(Compressor,Compressor_off);
 	            		Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
 	            	   HMI.Compressor_Error_State=Compressor_off;
 	            	   HMI.condenser_state=Condenser_off;

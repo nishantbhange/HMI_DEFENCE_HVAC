@@ -192,7 +192,7 @@ typedef struct{
 	Vent_t                            vent_state;
 	error_flag_t                      error_flag;
 	ErrorCode_t                       Display_Error_Code[ERORR_COUNT];
-	bool                              Compressor_Error_State;
+	Compressor_t                      Compressor_Error_State;
 	float                             OC_Current_Val;   /* replaces the fixed ceiling current value for compressor(it could be 1.5x , 2x we dont know !!) */
 	float                             OC_Time_Val;     /* replaces the fixed Time for which compressor wont turn off even under overcurrent case*/
 

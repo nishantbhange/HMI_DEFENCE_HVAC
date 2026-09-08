@@ -284,7 +284,7 @@ if((flags>>TEMP_INC_FLAG)&0x01U){
          if(Debounce_Check(BTN_TEMP_INC)){
         	 bool CompSw_Also_Held = (PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U;
         	     if(!(CompSw_Also_Held && UI_State==UI_Normal)){
-        	         Event = Event_Increase_Temp;
+        	         Event = Event_Decrease_Temp;
         	     }
                }
 
@@ -374,7 +374,7 @@ void PORTE_IRQHandler(void){
 	//PTE8-Temp--
 	if((flags>>TEMP_DEC_FLAG)&0x01U){
 		 if(Debounce_Check(BTN_TEMP_DEC)){
-			Event=Event_Decrease_Temp;
+			Event=Event_Increase_Temp;
 	 }
 		 IP_PORTE->ISFR|=(1<<TEMP_DEC_FLAG);
 	}

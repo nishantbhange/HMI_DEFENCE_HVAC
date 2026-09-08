@@ -36,7 +36,7 @@ static EEPROM_Data_t EEPROM_Prev_Snapshot;
 
 #define SYSTICK_1MS_LOAD_VALUE   (CoreClockHz / 1000U - 1U)
 
-#define EEPROM_WRITE_QUIET_PERIOD_MS   5000U
+#define EEPROM_WRITE_QUIET_PERIOD_MS   1000U
 #define Delay_5_SEC                    5000U
 
  volatile bool ADC_Timeout_Flag;
@@ -100,8 +100,8 @@ int main(void)
     for(;;)
     {
 
-    	//Check_OverCurrent();
-        Process_Pending_Event();
+
+      Process_Pending_Event();
         HMI.curr_temp = ADC_Data.Temp_Sensor_Val;
         if(HMI.error_flag!=error_flag_set){
         Update_Compressor_State((volatile HMI_t *)&HMI);
