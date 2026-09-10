@@ -68,8 +68,8 @@
  static void update_state_LPSW_Error(void );
  static void update_state_OC_Error(void );
 
- static void LPSW_Error_Handler(bool Error_Set_Reset );
- static void HPSW_Error_Handler(bool Error_Set_Reset );
+ void LPSW_Error_Handler(bool Error_Set_Reset );
+ void HPSW_Error_Handler(bool Error_Set_Reset );
  static void ADC_Error_Handler(bool Error_Set_Reset );
  static void OC_Error_Handler(bool Error_Set_Reset );
 
@@ -409,21 +409,27 @@
 				        Relay_Cntrl(Heater,Heater_off);
 						Led_Cntrl(Heater,Heater_off);
 
-						 //condenser on immediately
+						 //condenser + solenoid ON immediately (same pressure-balancing sequence as auto mode)
 						Relay_Cntrl(Condenser,Condenser_on);
 						Led_Cntrl(Condenser,Condenser_on);
 
-						//compressor staggered behind it
-						if(Systick_Tick_Count_Stagger>=COMPRESSOR_STAGGER_DELAY_MS){
+
+						//compressor starts 10s after condenser/solenoid switch on
+						if(Systick_Tick_Count_Stagger>=TICK_COUNT_10SEC){
 							Relay_Cntrl(Compressor,Compressor_on);
 							Led_Cntrl(Compressor,Compressor_on);
+
+							//solenoid stays on 5s more after the compressor is actually on, then closes
+							if(Systick_Tick_Count_Stagger>=(TICK_COUNT_10SEC+COMPRESSOR_STAGGER_DELAY_MS)){
+								Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+							}
 						}
 						else{
 							Relay_Cntrl(Compressor,Compressor_off);
 							Led_Cntrl(Compressor,Compressor_off);
+							Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_on);
 						}
 
-						Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 						Relay_Cntrl(Blower,Blower_on);
 						Led_Cntrl(Blower,Blower_on);
 						HMI->user_Heater_state=Heater_off;
@@ -450,10 +456,13 @@
 			 Manual_Mode_Count=0;
 			 Manual_Mode_Flag=RESET;
 			 HMI->mode=Auto_Mode;
-			 //LCD_Clear();
+			 Systick_Tick_Count_Stagger=0;
+			 HMI->compressor_state=Compressor_off;
+
+
 
 			}
-		// Update_Display(*HMI);
+
 		}
 
 	else{
@@ -651,14 +660,23 @@ else{
     if(HMI.mode==Auto_Mode){
 
  	   if((uint8_t)HMI.set_temp!=Prev_Set_Temp){
- 		snprintf(Display_Buf,sizeof(Display_Buf),"SET %d",(uint8_t)HMI.set_temp);
+ 		snprintf(Display_Buf,sizeof(Display_Buf),"S%d",(uint8_t)HMI.set_temp);
  		LCD_String_XY(1, 0, Display_Buf);
  		Prev_Set_Temp=HMI.set_temp;
  	   }
  	   if((uint8_t)HMI.curr_temp != Prev_Curr_Temp){
- 		snprintf(Display_Buf,sizeof(Display_Buf),"AIR %-3d",(int8_t)HMI.curr_temp);
- 		LCD_String_XY(1, 8, Display_Buf);
- 		Prev_Curr_Temp=HMI.curr_temp;
+ 		  uint16_t currfirst =
+ 		      (uint32_t)(((ADC_Data.ADC_Compressor_Val * 3.0f) / 0.311f) * 100.0f);
+
+ 		  snprintf(Display_Buf, sizeof(Display_Buf),
+ 		           "A%-3d I %u.%02u",
+ 		           (int8_t)HMI.curr_temp,
+ 		           currfirst / 100U,
+ 		           currfirst % 100U);
+
+ 		  LCD_String_XY(1, 4, Display_Buf);
+
+ 		  Prev_Curr_Temp = HMI.curr_temp;
  	   }
     }
     else { // Manual_mode
@@ -898,6 +916,7 @@ void Led_Cntrl( Part_t part,bool Enable){
 
 void SysTick_Handler(void){
 	Global_Tick_Count++;
+	Buttons_Poll_1ms();   // confirm-after-quiet debounce - see GPIO.c
 	if(HMI.error_flag==error_flag_reset){
 	if(HMI.mode==Auto_Mode){
 	if(HMI.compressor_state==Compressor_wait_to_on || HMI.compressor_state==Compressor_wait_to_off)
@@ -935,7 +954,7 @@ void SysTick_Handler(void){
 		//manual mode
 		//manual mode
 				if(HMI.user_compressor_state==Compressor_on){
-					if(Systick_Tick_Count_Stagger<TICK_COUNT_10SEC){
+					if(Systick_Tick_Count_Stagger<TICK_COUNT_20SEC){
 						Systick_Tick_Count_Stagger++;
 					}
 				}
@@ -994,7 +1013,13 @@ void SysTick_Handler(void){
 
 	if((Global_Tick_Count-Press_Start_Tick)>=LONG_PRESS_MS && Long_Press_Flag==SET ){
 			           //long press detected !! change current mode .
-			           Event=Event_Mode;
+			           //belt-and-suspenders: with the fix in GPIO.c this flag can no
+			           //longer get stranded SET by a lost release edge, but re-checking
+			           //the live pin here costs nothing and means this line can never
+			           //fire a mode toggle unless PWR is still physically held down.
+			           if((PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_PWR)&0x01U){
+			               Event=Event_Mode;
+			           }
 			           Long_Press_Flag=RESET;
 
 			                  }
@@ -1004,6 +1029,7 @@ void SysTick_Handler(void){
 	    bool CompSw_Held  = (PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U;
 
 	    if(TempInc_Held && CompSw_Held){
+	    	   OK_Key_Locked = true;
 	        if(!Preset_Combo_Active){
 	            Preset_Combo_Active    = true;
 	            Preset_Combo_Start_Tick = Global_Tick_Count;

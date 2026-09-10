@@ -152,8 +152,8 @@ PortContainer_0_BOARD_InitPeripherals:
   - {pin_num: '37', peripheral: PORTA, signal: 'port, 7', pin_signal: PTA7, direction: OUTPUT}
   - {pin_num: '38', peripheral: PORTA, signal: 'port, 6', pin_signal: PTA6, direction: OUTPUT}
   - {pin_num: '39', peripheral: PORTE, signal: 'port, 7', pin_signal: PTE7, direction: OUTPUT}
-  - {pin_num: '47', peripheral: PORTA, signal: 'port, 3', pin_signal: PTA3, direction: INPUT, DFE: state_1}
-  - {pin_num: '48', peripheral: PORTA, signal: 'port, 2', pin_signal: PTA2, direction: INPUT, DFE: state_1}
+  - {pin_num: '47', peripheral: PORTA, signal: 'port, 3', pin_signal: PTA3, direction: INPUT, PE: state_0, PS: state_0, DFE: state_1}
+  - {pin_num: '48', peripheral: PORTA, signal: 'port, 2', pin_signal: PTA2, direction: INPUT, PE: state_0, DFE: state_1}
   - {pin_num: '11', peripheral: PORTB, signal: 'port, 7', pin_signal: PTB7, direction: OUTPUT, PE: state_1, PS: state_1, initValue: state_1}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */

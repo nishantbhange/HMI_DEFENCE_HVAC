@@ -5,7 +5,146 @@
 #include <math.h>
  volatile uint32_t Press_Start_Tick=0;
  volatile bool Long_Press_Flag=RESET ;
+ volatile bool OK_Key_Locked=RESET;
 volatile uint32_t Last_Tick[BTN_COUNT]={0};
+
+/* ---------------------------------------------------------------------
+ * Noise-immune "confirm after quiet" debounce.
+ *
+ * Every button pin ISR does is: note that an edge happened, and restart a
+ * per-button timer. Nothing is acted on there anymore. Once per ms (from
+ * SysTick_Handler) Buttons_Poll_1ms() checks each button that had an edge:
+ * if DEBOUNCE_MS has passed with NO further edges on that pin, the line is
+ * trusted and the pin is re-sampled live.
+ *
+ * Any burst of edges - real contact bounce or EMI ringing, doesn't matter
+ * which - just keeps re-arming the window, so nothing fires mid-burst.
+ * If the line has simply settled back to the state it already had (a pure
+ * glitch that comes and goes), the "level changed?" check below is false
+ * and NOTHING is generated - the application never even hears about it.
+ * That's the property you don't get from a bare "ignore edges closer than
+ * 40ms apart" gate: that only rejects the *first* retrigger, not a second,
+ * cleanly-spaced glitch, and it also has no idea whether the edge it did
+ * accept was ever properly paired with its matching return edge - which is
+ * exactly how Long_Press_Flag was getting stuck SET forever on PWR noise.
+ * --------------------------------------------------------------------- */
+static volatile uint32_t Btn_Last_Edge_Tick[BTN_COUNT] = {0};
+static volatile bool     Btn_Pending[BTN_COUNT]        = {RESET};
+static volatile uint8_t  Btn_Confirmed_Level[BTN_COUNT]= {0}; // meaningful only for level-type buttons: HPSW, LPSW, PWR
+
+static inline void Btn_Note_Edge(Button_Id_t id){
+    Btn_Last_Edge_Tick[id] = Global_Tick_Count;
+    Btn_Pending[id]        = SET;
+}
+
+/* Call once at startup (after Interrupt_Init has cleared ISFR) so the
+ * level-type buttons don't report a false "change" the first time the
+ * line ever moves - we need to know what they were already sitting at. */
+void Buttons_Debounce_Init(void){
+    Btn_Confirmed_Level[BTN_HPSW] = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01U);
+    Btn_Confirmed_Level[BTN_LPSW] = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_LPSW)&0x01U);
+    Btn_Confirmed_Level[BTN_PWR]  = (uint8_t)((PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_PWR)&0x01U);
+}
+
+/* Call once per ms from SysTick_Handler. */
+void Buttons_Poll_1ms(void){
+	 if(!((PINS_DRV_ReadPins(IP_PTC)>>COMPRESSOR_SW_FLAG)&0x01U)){
+	        OK_Key_Locked = RESET;   // pin is physically low -> unlock
+	    }
+
+    for(Button_Id_t id=(Button_Id_t)0; id<BTN_COUNT; id++){
+        if(!Btn_Pending[id]) continue;
+        if((Global_Tick_Count - Btn_Last_Edge_Tick[id]) < DEBOUNCE_MS) continue; // burst still settling
+
+        Btn_Pending[id] = RESET;   // line has been quiet for a full DEBOUNCE_MS - trust it now
+
+        switch(id){
+
+        case BTN_HPSW: {
+            uint8_t level = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01U);
+            if(level != Btn_Confirmed_Level[id]){
+                Btn_Confirmed_Level[id] = level;
+                if(!level){ Event=Event_Error;       Current_Error=Error_Event_HPSW; }
+                else     { Event=Event_Error_Clear;  Current_Error=Error_HPSW_Clear; }
+            }
+            break;
+        }
+
+        case BTN_LPSW: {
+            uint8_t level = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_LPSW)&0x01U);
+            if(level != Btn_Confirmed_Level[id]){
+                Btn_Confirmed_Level[id] = level;
+                if(!level){ Event=Event_Error;       Current_Error=Error_Event_LPSW; }
+                else     { Event=Event_Error_Clear;  Current_Error=Error_LPSW_Clear; }
+            }
+            break;
+        }
+
+        case BTN_PWR: {
+            uint8_t level = (uint8_t)((PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_PWR)&0x01U);
+            if(level != Btn_Confirmed_Level[id]){
+                Btn_Confirmed_Level[id] = level;
+                if(level){
+                    // confirmed, sustained press (held down through 40ms of quiet)
+                    Press_Start_Tick = Global_Tick_Count;
+                    Long_Press_Flag  = SET;
+                } else {
+                    // confirmed, sustained release - this can never be lost now,
+                    // so Long_Press_Flag can never get stuck SET again.
+                    Long_Press_Flag = RESET;
+                    if(Press_Start_Tick!=0 && (Global_Tick_Count-Press_Start_Tick) < LONG_PRESS_MS){
+                        Event = Event_Machine_status;   // genuine short press-release
+                    }
+                    // else: it was a long hold - SysTick_Handler's timeout path
+                    // already fired Event_Mode while it was still held down.
+                    Press_Start_Tick = 0;
+                }
+            }
+            break;
+        }
+
+        case BTN_TEMP_INC:
+            // Rising-edge-only pin: no interrupt on release, so re-sample live.
+            // If it's still high 40ms after the edge that woke us, the pulse
+            // outlasted the whole debounce window - a bare EMI spike won't.
+            if((PINS_DRV_ReadPins(IP_PTB)>>TEMP_INC_FLAG)&0x01U){
+                bool CompSw_Also_Held = (PINS_DRV_ReadPins(IP_PTC)>>COMPRESSOR_SW_FLAG)&0x01U;
+                if(!(CompSw_Also_Held && UI_State==UI_Normal)){
+                    Event = Event_Decrease_Temp;
+                }
+            }
+            break;
+
+        case BTN_TEMP_DEC:
+            if((PINS_DRV_ReadPins(IP_PTE)>>TEMP_DEC_FLAG)&0x01U){
+                Event = Event_Increase_Temp;
+            }
+            break;
+
+        case BTN_COMPRESSOR_SW:
+            if((PINS_DRV_ReadPins(IP_PTC)>>COMPRESSOR_SW_FLAG)&0x01U){
+                if(!OK_Key_Locked){
+                    Event = Event_User_Compressor;
+                }
+            }
+            break;
+
+        case BTN_HEATER_SW:
+            if((PINS_DRV_ReadPins(IP_PTC)>>HEATER_SW_FLAG)&0x01U){
+                Event = Event_User_Heater;
+            }
+            break;
+
+        case BTN_BLOWER_SW:
+            if((PINS_DRV_ReadPins(IP_PTD)>>BLOWER_SW_FLAG)&0x01U){
+                Event = Event_Blower;
+            }
+            break;
+
+        default: break;
+        }
+    }
+}
 
 
 static float V_Temp=0;
@@ -105,9 +244,15 @@ static volatile float V_at_Rated_curr ;
 	  NVIC_SetPriority(ADC0_IRQn,2);
 	  NVIC_EnableIRQ(ADC0_IRQn);
 
+	  Buttons_Debounce_Init();
+
   }
 
 
+/* Superseded by Buttons_Poll_1ms()'s confirm-after-quiet debounce above.
+ * Left unused rather than deleted in case anything else in the project
+ * still links against it - safe to remove once you've confirmed nothing
+ * else calls it. */
 static bool Debounce_Check(Button_Id_t id) {
     if ((Global_Tick_Count - Last_Tick[id]) > DEBOUNCE_MS) {
         Last_Tick[id] = Global_Tick_Count;
@@ -136,8 +281,8 @@ void ADC0_IRQHandler(void){
 		            break;
 		        case ADC_COMPRESSOR_CT:
               //oc current value is a input from user in runtime !!
-		        	 V_at_Rated_curr=((HMI.OC_Current_Val)*12.0f)/75.0f;
-
+		        	 V_at_Rated_curr=((HMI.OC_Current_Val)*0.311f)/3.0f;
+		        	 ADC_Data.ADC_Compressor_Val = raw_voltage;
 		            if( raw_voltage>= V_at_Rated_curr){
 
 		            	 if(Check_Status_Flag==RESET){
@@ -175,7 +320,7 @@ void ADC0_IRQHandler(void){
 
 
 		            }else{
-		            	ADC_Data.ADC_Compressor_Val = raw_voltage;
+
 		            	Check_Status_Flag=RESET;
 		            	Compressor_Overcurrent_Time_ms=0;
 	                  if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
@@ -229,154 +374,69 @@ void ADC0_IRQHandler(void){
 
 void PORTA_IRQHandler(void){
 	uint32_t flags =IP_PORTA->ISFR;
-	 bool Is_Pressed=0;
 	//PTA2 -HPSW
 	if((flags>>HPSW_FLAG)&0x01U){
-
-	//HPSW interrupt handler set the error flag
-			if(Debounce_Check(BTN_HPSW)){
-				Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01;
-	//rising edge ->hpsw error has happened !!
-				              if(Is_Pressed){
-								 Event=Event_Error;
-								 Current_Error=Error_Event_HPSW;
-								                }
-	//falling edge ->hpsw error has cleared !!
-				              else{
-					            Event=Event_Error_Clear;
-					            Current_Error= Error_HPSW_Clear;
-					                            }
-
-			         }
-			 IP_PORTA->ISFR|=(1<<HPSW_FLAG);
-
-			}
+		// Don't decide anything here - just mark that the line moved and
+		// let Buttons_Poll_1ms act once it's been quiet for DEBOUNCE_MS.
+		Btn_Note_Edge(BTN_HPSW);
+		IP_PORTA->ISFR|=(1<<HPSW_FLAG);
+	}
 	//PTA3 -LPSW
 	if((flags>>LPSW_FLAG)&0x01U){
-	//LPSW interrupt handler set the error flag
-			if(Debounce_Check(BTN_LPSW)){
-				 Is_Pressed=(PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_LPSW)&0x01;
-	//rising edge ->lpsw error has happened !!
-				 if(Is_Pressed){
-						Event=Event_Error;
-					    Current_Error=Error_Event_LPSW;
-				                }
-	//falling edge ->lpsw error has cleared !!
-				 else {
-	               	Event=Event_Error_Clear;
-	               	Current_Error= Error_LPSW_Clear;
-	               }
-
-	        }
-			IP_PORTA->ISFR|=(1<<LPSW_FLAG);
-
-		}
+		Btn_Note_Edge(BTN_LPSW);
+		IP_PORTA->ISFR|=(1<<LPSW_FLAG);
+	}
 }
 
 void PORTB_IRQHandler(void){
 	//PTB5 temp++
 	//PTB4 PWR
-	 bool Is_Pressed=0;
 	uint32_t flags =IP_PORTB->ISFR;
-if((flags>>TEMP_INC_FLAG)&0x01U){
 
-    // temperature increase interrupt handler
-         if(Debounce_Check(BTN_TEMP_INC)){
-        	 bool CompSw_Also_Held = (PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U;
-        	     if(!(CompSw_Also_Held && UI_State==UI_Normal)){
-        	         Event = Event_Decrease_Temp;
-        	     }
-               }
-
-         IP_PORTB->ISFR|=(1<<TEMP_INC_FLAG);
+	if((flags>>TEMP_INC_FLAG)&0x01U){
+		Btn_Note_Edge(BTN_TEMP_INC);
+		IP_PORTB->ISFR|=(1<<TEMP_INC_FLAG);
 	}
 
-if((flags>>PWR_FLAG)&0x01U){
-		 //PWR interrupt handler
-
-		 Is_Pressed=(PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_PWR)&0x01;
-				if(Is_Pressed){
-
-				 if(Debounce_Check(BTN_PWR)){
-					 Press_Start_Tick=Global_Tick_Count;
-					 Long_Press_Flag=SET ;
-				         }
-				       }
-
-				else{
-					if(Debounce_Check(BTN_PWR)){
-						if(Press_Start_Tick==0){
-							IP_PORTB->ISFR|=(1<<PWR_FLAG);
-							return;
-						}
-		                  if((Global_Tick_Count-Press_Start_Tick)>=LONG_PRESS_MS){
-		                	  //long press detected !! change current mode .
-
-		                	 // Event=Event_Mode;
-		                  }
-		                  else{
-		                	  //on or off the machine
-		                	  Event=Event_Machine_status;
-		                  }
-		                  Press_Start_Tick=0;
-		                  Long_Press_Flag=RESET;
-					}
-				}
-
-	IP_PORTB->ISFR|=(1<<PWR_FLAG);
-
+	if((flags>>PWR_FLAG)&0x01U){
+		// Every press AND every release edge now reliably restarts the
+		// confirm window - the release can no longer be swallowed by a
+		// time gate the way it was with Debounce_Check, so Long_Press_Flag
+		// can't get stranded SET by a glitch anymore.
+		Btn_Note_Edge(BTN_PWR);
+		IP_PORTB->ISFR|=(1<<PWR_FLAG);
 	}
-
-
-
 }
 void PORTC_IRQHandler(void){
 
 	//PTC2 -compressor switch
 	//PTC3 -Heater Switch
 
-
 	uint32_t flags =IP_PORTC->ISFR;
 
-	 if((flags>>COMPRESSOR_SW_FLAG)&0x01U){
-		 if(Debounce_Check(BTN_COMPRESSOR_SW)){
-			 bool TempInc_Also_Held = (PINS_DRV_ReadPins(IP_PTB) >> TEMP_INC_FLAG) & 0x01U;
-		    if(!(TempInc_Also_Held && UI_State==UI_Normal)){
-		        Event = Event_User_Compressor;
-		    }
-		         }
-   IP_PORTC->ISFR|=(1<<COMPRESSOR_SW_FLAG);
-			}
-	 if((flags>>HEATER_SW_FLAG)&0x01U){
-		 if(Debounce_Check(BTN_HEATER_SW)){
-					Event=Event_User_Heater;
-				         }
-   IP_PORTC->ISFR|=(1<<HEATER_SW_FLAG);
-
-			}
-
+	if((flags>>COMPRESSOR_SW_FLAG)&0x01U){
+		Btn_Note_Edge(BTN_COMPRESSOR_SW);
+		IP_PORTC->ISFR|=(1<<COMPRESSOR_SW_FLAG);
+	}
+	if((flags>>HEATER_SW_FLAG)&0x01U){
+		Btn_Note_Edge(BTN_HEATER_SW);
+		IP_PORTC->ISFR|=(1<<HEATER_SW_FLAG);
+	}
 }
 void PORTD_IRQHandler(void){
 	uint32_t flags =IP_PORTD->ISFR;
 	//PTD7 -Blower Switch
 	if((flags>>BLOWER_SW_FLAG)&0x01U){
-		 if(Debounce_Check(BTN_BLOWER_SW)){
-			 Event=Event_Blower;
-						         }
-		 IP_PORTD->ISFR|=(1<<BLOWER_SW_FLAG);
-    }
-
-
+		Btn_Note_Edge(BTN_BLOWER_SW);
+		IP_PORTD->ISFR|=(1<<BLOWER_SW_FLAG);
+	}
 }
 
 void PORTE_IRQHandler(void){
 	uint32_t flags =IP_PORTE->ISFR;
 	//PTE8-Temp--
 	if((flags>>TEMP_DEC_FLAG)&0x01U){
-		 if(Debounce_Check(BTN_TEMP_DEC)){
-			Event=Event_Increase_Temp;
-	 }
-		 IP_PORTE->ISFR|=(1<<TEMP_DEC_FLAG);
+		Btn_Note_Edge(BTN_TEMP_DEC);
+		IP_PORTE->ISFR|=(1<<TEMP_DEC_FLAG);
 	}
 }
-

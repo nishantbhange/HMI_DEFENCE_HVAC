@@ -82,13 +82,18 @@ int main(void)
     //check if any of lpsw or hpsw is high at start .
 
     uint32_t values=PINS_DRV_ReadPins(IP_PTA);
-    if((values>>SW_PIN_LPSW)&0x01){
-    	Event=Event_Error;
-        Current_Error=Error_Event_LPSW;
+   if(!((values>>SW_PIN_LPSW)&0x01)){
+	   LPSW_Error_Handler(Error_Set);
     }
-    if((values>>SW_PIN_HPSW)&0x01){
-    	Event=Event_Error;
-    	Current_Error=Error_Event_HPSW;
+   else {
+      LPSW_Error_Handler(Error_Reset);
+  }
+
+   if(!((values>>SW_PIN_HPSW)&0x01)){
+    	 HPSW_Error_Handler(Error_Set);
+        }
+  else {
+            HPSW_Error_Handler(Error_Reset);
         }
     //so that the temp sensor reads the data before Update_Heater_State and heater dosent turn on flasly at very first boot
     Service_ADC();
@@ -127,7 +132,7 @@ int main(void)
 static void System_Init(void)
 {
 	 /* --- 1. Clock, before anything else touches a peripheral --- */
-	    Clock_Ip_Init(Clock_Ip_aClockConfig);
+ 	    Clock_Ip_Init(Clock_Ip_aClockConfig);
 
 	#if defined (FEATURE_CLOCK_IP_HAS_SPLL_CLK)
 	    uint32_t Pll_Lock_Timeout = PLL_LOCK_TIMEOUT_ITER;   /* pick a generous bounded value */

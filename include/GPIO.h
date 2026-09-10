@@ -46,6 +46,7 @@
 //PTC15 -ADC channel 12
 
 #define TEMP_INC_FLAG 5U
+#define TEMP_INCREASE_FLAG 8U
 #define PWR_FLAG      4U
 
 
@@ -76,11 +77,12 @@
 
 
 typedef enum {
-    BTN_TEMP_INC = 0,
-    BTN_TEMP_DEC,
-    BTN_PWR,
+
+    BTN_HPSW=0,
     BTN_LPSW,
-    BTN_HPSW,
+	BTN_PWR,
+	BTN_TEMP_INC ,
+	BTN_TEMP_DEC,
     BTN_COMPRESSOR_SW,
     BTN_HEATER_SW,
     BTN_BLOWER_SW,
@@ -91,10 +93,12 @@ typedef enum {
  void PINS_DRV_ClearPins( GPIO_Type * const base , uint32_t pins);
  void PINS_DRV_SetPins( GPIO_Type * const base , uint32_t pins);
  void PINS_DRV_TogglePins(GPIO_Type * const base , uint32_t pins);
+ void Buttons_Poll_1ms(void);
  uint32_t PINS_DRV_ReadPins(GPIO_Type * const base);
  void Interrupt_Init(void );
  extern volatile uint32_t Press_Start_Tick;
  extern volatile bool Long_Press_Flag ;
+ extern volatile bool OK_Key_Locked ;
 
 
 #endif /* GPIO_H_ */

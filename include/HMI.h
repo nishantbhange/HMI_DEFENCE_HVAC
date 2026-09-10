@@ -68,6 +68,7 @@
 #define Heater_Cut_Off_Temp                 24U
 
 #define TICK_COUNT_10SEC                    10000U
+#define TICK_COUNT_20SEC                    20000U
 //#define TICK_COUNT_3MINS                    180000U
 #define HEATER_HYSTERESIS                   2U
 #define SOLENOID_TEMP_BUFFER                0.5f
@@ -75,7 +76,7 @@
 typedef enum { UI_Normal, UI_Preset_Edit } UI_State_t;
 extern volatile UI_State_t UI_State;
 
-#define PRESET_ENTRY_HOLD_MS   20000U   /* hold TEMP+ & COMP together 20 secs to enter */
+#define PRESET_ENTRY_HOLD_MS   5000U   /* hold TEMP+ & COMP together 20 secs to enter */
 #define PRESET_EDIT_IDLE_MS     20000U   /* auto-exit after 20s of no key activity    */
 
 #define MAX_CURRENT_STEP          0.5f
@@ -233,7 +234,8 @@ void Led_Cntrl( Part_t part,bool Enable);
 void Error_Handler( void  );
 void Update_Compressor_State(HMI_t *HMI);
 void Update_Heater_State(HMI_t *HMI);
-
+void LPSW_Error_Handler(bool Error_Set_Reset );
+void HPSW_Error_Handler(bool Error_Set_Reset );
 void Backlight_Cntrl(bool On_Off);
 
 
