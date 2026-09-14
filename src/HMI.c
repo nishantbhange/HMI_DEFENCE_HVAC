@@ -329,6 +329,23 @@
 					Relay_Cntrl(Heater,Heater_off);
 					Led_Cntrl(Heater,Heater_off);
 		}
+
+		if(HMI->heater2_state==Heater_on){
+
+				Relay_Cntrl(Heater2,Heater_on);
+
+				Relay_Cntrl(Compressor,Compressor_off);
+				Led_Cntrl(Compressor,Compressor_off);
+				Relay_Cntrl(Condenser,Condenser_off);
+				Led_Cntrl(Condenser,Condenser_off);
+				Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
+
+			}
+			else{
+						Relay_Cntrl(Heater2,Heater_off);
+						Led_Cntrl(Heater2,Heater_off);
+			}
+
 					//Condenser fan follows the compressor
 					//stays energised through on , only drops with the compressor itself
 			        //Compressor relay is only energised once fully ON - the wait_to_on/wait_to_off
@@ -425,6 +442,11 @@
 			           // Relay_Cntrl(Vent,Vent_on);
 						Led_Cntrl(Vent,Vent_on);
 
+             if(HMI->heater2_state!=Heater_off){
+            	 HMI->heater2_state=Heater_off;
+            	 Relay_Cntrl(Heater2 ,Heater_off);
+
+             }
 						//heater : user-controlled
 			if(HMI->user_Heater_state==Heater_on){
 				//heater on
@@ -530,6 +552,7 @@
 					  Led_Cntrl(Vent,Vent_off);
 					//heater off
 					  Relay_Cntrl(Heater,Heater_off);
+					  Relay_Cntrl(Heater2,Heater_off);
 					  Led_Cntrl(Heater,Heater_off);
 					 //compressor off
 					  Relay_Cntrl(Compressor,Compressor_off);
@@ -642,6 +665,18 @@ else{
 		 		//Do nothing previous state is hold in hysterisis region
 		 			    	 }
      }
+
+
+	    // heater 2 will turn on if room temp goes below 10 degrees
+	    if(HMI->curr_temp<=(HEATER2_ON_TEMP)){
+	    	HMI->heater2_state=Heater_on;
+	    }
+	    else if(HMI->curr_temp>=(HEATER2_ON_TEMP+0.5f)){
+	    	HMI->heater2_state=Heater_off;
+	    }
+	    else{
+
+	    }
 
  }
 
@@ -814,6 +849,7 @@ else{
     	HMI->Display_Error_Code[i]=First_EEPROM_Data.Display_Error_Code[i];
     }
     HMI->compressor_state=Compressor_off;
+    HMI->heater2_state=Heater_off;
 
 
     EEPROM = First_EEPROM_Data;
@@ -825,8 +861,9 @@ else{
 void Relay_Cntrl( Part_t part,bool Enable){
 	switch(part){
 	//R1-PTB1-solenoid valve
-	//R2-PTB0-Reserve
+	//R2-PTB0-Heater2
 	//R3-PTC9-Heater
+
 	//R4-PTC8-Reserve
 	//R5-PTA7-Blower
 	//R6-PTA6-Condenser
@@ -867,6 +904,15 @@ void Relay_Cntrl( Part_t part,bool Enable){
 			PINS_DRV_ClearPins(IP_PTC , 1U<<9);
 		}
 	break ;
+
+	case Heater2 :
+			if(Enable){
+				PINS_DRV_SetPins(IP_PTB, 1U<<0);
+			}
+			else{
+				PINS_DRV_ClearPins(IP_PTB , 1U<<0);
+			}
+		break ;
 
 	case Solenoid_Valve :
 		if(Enable){
@@ -998,8 +1044,8 @@ void SysTick_Handler(void){
 
 	}
 	else{
-		//manual mode
-		//manual mode
+
+		//Manual mode
 				if(HMI.user_compressor_state==Compressor_on){
 					if(Systick_Tick_Count_Stagger<TICK_COUNT_20SEC){
 						Systick_Tick_Count_Stagger++;
@@ -1483,6 +1529,13 @@ static void update_state_ADC_Error(void ){
 						 Led_Cntrl(Blower,Blower_on);
                          Led_Cntrl(Vent,Vent_off);
 
+                     //heater2 off
+                         if(HMI.heater2_state!= Heater_off){
+
+                         HMI.heater2_state=Heater_off;
+                         Relay_Cntrl(Heater2,Heater_off);
+
+                         }
 	                 //heater off
 					if(HMI.heater_state!=Heater_off || HMI.user_Heater_state!=Heater_off){
 						HMI.heater_state=Heater_off;
@@ -1574,7 +1627,16 @@ static void update_state_HPSW_Error(void ){
 					HMI.vent_state=Vent_off;
 					//Relay_Cntrl(Vent,Vent_off);
 					Led_Cntrl(Vent,Vent_off);
-													}
+				}
+
+	                    //heater2 off
+	 if(HMI.heater2_state!= Heater_off){
+
+	                  HMI.heater2_state=Heater_off;
+	                  Relay_Cntrl(Heater2,Heater_off);
+
+	                         }
+
 					//heater off
 	if(HMI.heater_state!=Heater_off || HMI.user_Heater_state!=Heater_off){
 					HMI.heater_state=Heater_off;
@@ -1619,6 +1681,14 @@ static void update_state_LPSW_Error(void ){
 					//Relay_Cntrl(Vent,Vent_off);
 					Led_Cntrl(Vent,Vent_off);
 													}
+
+                    //heater2 off
+   if(HMI.heater2_state!= Heater_off){
+
+                   HMI.heater2_state=Heater_off;
+                   Relay_Cntrl(Heater2,Heater_off);
+
+         }
 					 //heater off
 	if(HMI.heater_state!=Heater_off || HMI.user_Heater_state!=Heater_off){
 					HMI.heater_state=Heater_off;
@@ -1658,6 +1728,14 @@ static void update_state_OC_Error(void ){
 							//Relay_Cntrl(Vent,Vent_off);
 							Led_Cntrl(Vent,Vent_on);
 										}
+	                    //heater2 off
+	                   if(HMI.heater2_state!= Heater_off){
+
+	                        HMI.heater2_state=Heater_off;
+	                        Relay_Cntrl(Heater2,Heater_off);
+
+	                         }
+
 		                 //heater off
 						if(HMI.heater_state!=Heater_off || HMI.user_Heater_state!=Heater_off){
 							HMI.heater_state=Heater_off;
@@ -1702,6 +1780,7 @@ static void Enter_Preset_Edit_Mode(void){
     Relay_Cntrl(Compressor,Compressor_off);     Led_Cntrl(Compressor,Compressor_off);
     Relay_Cntrl(Condenser,Condenser_off);       Led_Cntrl(Condenser,Condenser_off);
     Relay_Cntrl(Heater,Heater_off);             Led_Cntrl(Heater,Heater_off);
+    Relay_Cntrl(Heater2,Heater_off);             Led_Cntrl(Heater,Heater_off);
     Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 
     Edit_Max_Current  = HMI.OC_Current_Val;
@@ -1778,8 +1857,6 @@ void Process_Preset_Edit_Mode(void){
     }
 }
 
-/* ---- Debug/test current-view screen (5s hold to open, 20s auto-close) ---- */
-
 static void Enter_Curr_View_Mode(void){
     Curr_View_Start_Tick = Global_Tick_Count;
     UI_State = UI_Show_Current;
@@ -1797,9 +1874,9 @@ static void Draw_Curr_View_Screen(void){
         uint16_t comp_x100  = (uint16_t)(comp_a * 100.0f);
         uint16_t cond_x100  = (uint16_t)(cond_a * 100.0f);
 
-        snprintf(buf, sizeof(buf), "COMP  %u.%02u A", comp_x100/100U, comp_x100%100U);
+        snprintf(buf, sizeof(buf), "COMP  %u.%02u A  ", comp_x100/100U, comp_x100%100U);
         LCD_String_XY(0, 0, buf);
-        snprintf(buf, sizeof(buf), "COND  %u.%02u A", cond_x100/100U, cond_x100%100U);
+        snprintf(buf, sizeof(buf), "COND  %u.%02u A  ", cond_x100/100U, cond_x100%100U);
         LCD_String_XY(1, 0, buf);
     }
     else{ // CURR_VIEW_BLOWER

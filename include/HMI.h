@@ -82,6 +82,7 @@ extern volatile UI_State_t UI_State;
 #define MAX_CURRENT_STEP          0.5f
 #define WAIT_TIME_STEP_MS         5000U
 #define OC_PRESET_PARAM_COUNT     2U
+#define HEATER2_ON_TEMP           10.0f
 
 void Process_Preset_Edit_Mode(void);     /* called once per main-loop iteration */
 
@@ -148,7 +149,8 @@ typedef enum{
 	Blower    ,
 	Heater    ,
 	Compressor ,
-	Solenoid_Valve
+	Solenoid_Valve,
+	Heater2
 
 }Part_t;
 
@@ -190,6 +192,7 @@ typedef struct{
 	Heater_t                          user_Heater_state;
 	Condenser_t                       condenser_state;
 	Heater_t                          heater_state;
+	Heater_t                          heater2_state;
 	Vent_t                            vent_state;
 	error_flag_t                      error_flag;
 	ErrorCode_t                       Display_Error_Code[ERORR_COUNT];
