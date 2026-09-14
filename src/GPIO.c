@@ -6,7 +6,7 @@
  volatile uint32_t Press_Start_Tick=0;
  volatile bool Long_Press_Flag=RESET ;
  volatile bool OK_Key_Locked=RESET;
-volatile uint32_t Last_Tick[BTN_COUNT]={0};   // kept for ABI/back-compat, no longer used for gating
+volatile uint32_t Last_Tick[BTN_COUNT]={0};
 
 /* ---------------------------------------------------------------------
  * Noise-immune "confirm after quiet" debounce.
@@ -55,16 +55,14 @@ static inline float RollingAvg_Push(volatile ADC_RollingAvg_t *ra, float sample)
 }
 
 
-/* Call once at startup (after Interrupt_Init has cleared ISFR) so the
- * level-type buttons don't report a false "change" the first time the
- * line ever moves - we need to know what they were already sitting at. */
+
 void Buttons_Debounce_Init(void){
     Btn_Confirmed_Level[BTN_HPSW] = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01U);
     Btn_Confirmed_Level[BTN_LPSW] = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_LPSW)&0x01U);
     Btn_Confirmed_Level[BTN_PWR]  = (uint8_t)((PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_PWR)&0x01U);
 }
 
-/* Call once per ms from SysTick_Handler. */
+
 void Buttons_Poll_1ms(void){
 	 if(!((PINS_DRV_ReadPins(IP_PTC)>>COMPRESSOR_SW_FLAG)&0x01U)){
 	        OK_Key_Locked = RESET;   // pin is physically low -> unlock

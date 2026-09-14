@@ -3965,7 +3965,7 @@ END GROUP
  *(.flash_config)
  .flash_config  0x00000400       0x10 ./Project_Settings/Startup_Code/startup_cm4.o
 
-.flash          0x00000410     0x7f88
+.flash          0x00000410     0x7f8c
                 0x00000410                . = ALIGN (0x4)
  *(.startup)
  .startup       0x00000410       0xb8 ./Project_Settings/Startup_Code/startup_cm4.o
@@ -4425,108 +4425,108 @@ END GROUP
  .rodata        0x0000767c       0x10 ./src/main.o
  *(.rodata*)
  .rodata.str1.1
-                0x0000768c      0x102 ./src/HMI.o
-                                0x108 (size before relaxing)
+                0x0000768c      0x106 ./src/HMI.o
+                                0x10c (size before relaxing)
  .rodata.str1.1
-                0x0000778e       0x4a ./src/main.o
+                0x00007792       0x4a ./src/main.o
  .rodata._global_impure_ptr
-                0x000077d8        0x4 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-impure.o)
-                0x000077d8                _global_impure_ptr
+                0x000077dc        0x4 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-impure.o)
+                0x000077dc                _global_impure_ptr
  .rodata._svfprintf_r.str1.1
-                0x000077dc       0x11 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-svfprintf.o)
+                0x000077e0       0x11 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-svfprintf.o)
  .rodata._printf_i.str1.1
-                0x000077ed       0x22 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x000077f1       0x22 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-vfprintf_i.o)
  .rodata.logf.str1.1
-                0x0000780f       0x22 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libm.a(lib_a-wf_log.o)
+                0x00007813       0x22 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libm.a(lib_a-wf_log.o)
                                   0x1 (size before relaxing)
-                0x00007834                . = ALIGN (0x4)
- *fill*         0x0000780f        0x1 
+                0x00007838                . = ALIGN (0x4)
+ *fill*         0x00007813        0x1 
  *(.mcal_const_cfg)
  .mcal_const_cfg
-                0x00007810      0x400 ./generate/src/Clock_Ip_Cfg.o
-                0x00007810                Clock_Ip_aClockConfig
-                0x00007c10                . = ALIGN (0x4)
+                0x00007814      0x400 ./generate/src/Clock_Ip_Cfg.o
+                0x00007814                Clock_Ip_aClockConfig
+                0x00007c14                . = ALIGN (0x4)
  *(.mcal_const)
- .mcal_const    0x00007c10      0x59e ./RTD/src/Clock_Ip_Data.o
-                0x00007c10                Clock_Ip_aeHwDfsName
-                0x00007c14                Clock_Ip_aeHwPllName
-                0x00007c18                Clock_Ip_aeSourceTypeClockName
-                0x00007cd4                Clock_Ip_apxScgPeriphAsyncDivs
-                0x00007ce4                Clock_Ip_au8DividerValueHardwareValue
-                0x00007d25                Clock_Ip_au8SelectorEntrySIMHardwareValue
-                0x00007d54                Clock_Ip_au8SelectorEntryPcsHardwareValue
-                0x00007d83                Clock_Ip_au8SelectorEntryScsHardwareValue
-                0x00007db2                Clock_Ip_au16SelectorEntryHardwareValue
-                0x00007e09                Clock_Ip_au8ClockFeatures
-                0x00008118                Clock_Ip_au8CmuCallbackIndex
-                0x00008127                Clock_Ip_au8PcfsCallbackIndex
-                0x00008136                Clock_Ip_au8SelectorCallbackIndex
-                0x00008145                Clock_Ip_au8PllCallbackIndex
-                0x00008154                Clock_Ip_au8FractionalDividerCallbackIndex
-                0x00008163                Clock_Ip_au8GateCallbackIndex
-                0x00008172                Clock_Ip_au8IrcoscCallbackIndex
-                0x00008181                Clock_Ip_au8XoscCallbackIndex
-                0x00008190                Clock_Ip_au8DividerTriggerCallbackIndex
-                0x0000819f                Clock_Ip_au8DividerCallbackIndex
- *fill*         0x000081ae        0x2 
- .mcal_const    0x000081b0       0x3c ./RTD/src/Clock_Ip_Divider.o
-                0x000081b0                Clock_Ip_axDividerCallbacks
- .mcal_const    0x000081ec        0x8 ./RTD/src/Clock_Ip_DividerTrigger.o
-                0x000081ec                Clock_Ip_axDividerTriggerCallbacks
- .mcal_const    0x000081f4       0x20 ./RTD/src/Clock_Ip_ExtOsc.o
-                0x000081f4                Clock_Ip_axExtOscCallbacks
- .mcal_const    0x00008214        0xc ./RTD/src/Clock_Ip_FracDiv.o
-                0x00008214                Clock_Ip_axFracDivCallbacks
- .mcal_const    0x00008220       0x38 ./RTD/src/Clock_Ip_Gate.o
-                0x00008220                Clock_Ip_axGateCallbacks
- .mcal_const    0x00008258       0x3c ./RTD/src/Clock_Ip_IntOsc.o
-                0x00008258                Clock_Ip_axIntOscCallbacks
- .mcal_const    0x00008294       0x10 ./RTD/src/Clock_Ip_Monitor.o
-                0x00008294                Clock_Ip_axCmuCallbacks
- .mcal_const    0x000082a4       0x28 ./RTD/src/Clock_Ip_Pll.o
-                0x000082a4                Clock_Ip_axPllCallbacks
- .mcal_const    0x000082cc        0x4 ./RTD/src/Clock_Ip_ProgFreqSwitch.o
-                0x000082cc                Clock_Ip_axPcfsCallbacks
- .mcal_const    0x000082d0       0x58 ./RTD/src/Clock_Ip_Selector.o
-                0x000082d0                Clock_Ip_axSelectorCallbacks
- .mcal_const    0x00008328       0x20 ./RTD/src/Clock_Ip_Specific.o
- .mcal_const    0x00008348       0x28 ./RTD/src/Port_Ci_Port_Ip.o
-                0x00008348                Port_au32PortCiGpioBaseAddr
-                0x0000835c                Port_au32PortCiPortBaseAddr
-                0x00008370                . = ALIGN (0x4)
+ .mcal_const    0x00007c14      0x59e ./RTD/src/Clock_Ip_Data.o
+                0x00007c14                Clock_Ip_aeHwDfsName
+                0x00007c18                Clock_Ip_aeHwPllName
+                0x00007c1c                Clock_Ip_aeSourceTypeClockName
+                0x00007cd8                Clock_Ip_apxScgPeriphAsyncDivs
+                0x00007ce8                Clock_Ip_au8DividerValueHardwareValue
+                0x00007d29                Clock_Ip_au8SelectorEntrySIMHardwareValue
+                0x00007d58                Clock_Ip_au8SelectorEntryPcsHardwareValue
+                0x00007d87                Clock_Ip_au8SelectorEntryScsHardwareValue
+                0x00007db6                Clock_Ip_au16SelectorEntryHardwareValue
+                0x00007e0d                Clock_Ip_au8ClockFeatures
+                0x0000811c                Clock_Ip_au8CmuCallbackIndex
+                0x0000812b                Clock_Ip_au8PcfsCallbackIndex
+                0x0000813a                Clock_Ip_au8SelectorCallbackIndex
+                0x00008149                Clock_Ip_au8PllCallbackIndex
+                0x00008158                Clock_Ip_au8FractionalDividerCallbackIndex
+                0x00008167                Clock_Ip_au8GateCallbackIndex
+                0x00008176                Clock_Ip_au8IrcoscCallbackIndex
+                0x00008185                Clock_Ip_au8XoscCallbackIndex
+                0x00008194                Clock_Ip_au8DividerTriggerCallbackIndex
+                0x000081a3                Clock_Ip_au8DividerCallbackIndex
+ *fill*         0x000081b2        0x2 
+ .mcal_const    0x000081b4       0x3c ./RTD/src/Clock_Ip_Divider.o
+                0x000081b4                Clock_Ip_axDividerCallbacks
+ .mcal_const    0x000081f0        0x8 ./RTD/src/Clock_Ip_DividerTrigger.o
+                0x000081f0                Clock_Ip_axDividerTriggerCallbacks
+ .mcal_const    0x000081f8       0x20 ./RTD/src/Clock_Ip_ExtOsc.o
+                0x000081f8                Clock_Ip_axExtOscCallbacks
+ .mcal_const    0x00008218        0xc ./RTD/src/Clock_Ip_FracDiv.o
+                0x00008218                Clock_Ip_axFracDivCallbacks
+ .mcal_const    0x00008224       0x38 ./RTD/src/Clock_Ip_Gate.o
+                0x00008224                Clock_Ip_axGateCallbacks
+ .mcal_const    0x0000825c       0x3c ./RTD/src/Clock_Ip_IntOsc.o
+                0x0000825c                Clock_Ip_axIntOscCallbacks
+ .mcal_const    0x00008298       0x10 ./RTD/src/Clock_Ip_Monitor.o
+                0x00008298                Clock_Ip_axCmuCallbacks
+ .mcal_const    0x000082a8       0x28 ./RTD/src/Clock_Ip_Pll.o
+                0x000082a8                Clock_Ip_axPllCallbacks
+ .mcal_const    0x000082d0        0x4 ./RTD/src/Clock_Ip_ProgFreqSwitch.o
+                0x000082d0                Clock_Ip_axPcfsCallbacks
+ .mcal_const    0x000082d4       0x58 ./RTD/src/Clock_Ip_Selector.o
+                0x000082d4                Clock_Ip_axSelectorCallbacks
+ .mcal_const    0x0000832c       0x20 ./RTD/src/Clock_Ip_Specific.o
+ .mcal_const    0x0000834c       0x28 ./RTD/src/Port_Ci_Port_Ip.o
+                0x0000834c                Port_au32PortCiGpioBaseAddr
+                0x00008360                Port_au32PortCiPortBaseAddr
+                0x00008374                . = ALIGN (0x4)
  *(.mcal_const_no_cacheable)
-                0x00008370                . = ALIGN (0x4)
-                0x00008370                __init_table = .
+                0x00008374                . = ALIGN (0x4)
+                0x00008374                __init_table = .
  *(.init_table)
- .init_table    0x00008370       0x1c ./Project_Settings/Startup_Code/startup_cm4.o
-                0x0000838c                . = ALIGN (0x4)
-                0x0000838c                __zero_table = .
+ .init_table    0x00008374       0x1c ./Project_Settings/Startup_Code/startup_cm4.o
+                0x00008390                . = ALIGN (0x4)
+                0x00008390                __zero_table = .
  *(.zero_table)
- .zero_table    0x0000838c        0xc ./Project_Settings/Startup_Code/startup_cm4.o
-                0x00008398                . = ALIGN (0x4)
+ .zero_table    0x00008390        0xc ./Project_Settings/Startup_Code/startup_cm4.o
+                0x0000839c                . = ALIGN (0x4)
  *(.acmcu_code_rom)
-                0x00008398                . = ALIGN (0x4)
-                0x00008398                _etext = .
-                0x00008398                __DATA_ROM = .
+                0x0000839c                . = ALIGN (0x4)
+                0x0000839c                _etext = .
+                0x0000839c                __DATA_ROM = .
 
-.glue_7         0x00008398        0x0
- .glue_7        0x00008398        0x0 linker stubs
+.glue_7         0x0000839c        0x0
+ .glue_7        0x0000839c        0x0 linker stubs
 
-.glue_7t        0x00008398        0x0
- .glue_7t       0x00008398        0x0 linker stubs
+.glue_7t        0x0000839c        0x0
+ .glue_7t       0x0000839c        0x0 linker stubs
 
-.vfp11_veneer   0x00008398        0x0
- .vfp11_veneer  0x00008398        0x0 linker stubs
+.vfp11_veneer   0x0000839c        0x0
+ .vfp11_veneer  0x0000839c        0x0 linker stubs
 
-.v4_bx          0x00008398        0x0
- .v4_bx         0x00008398        0x0 linker stubs
+.v4_bx          0x0000839c        0x0
+ .v4_bx         0x0000839c        0x0 linker stubs
 
-.iplt           0x00008398        0x0
- .iplt          0x00008398        0x0 ./Project_Settings/Startup_Code/Vector_Table.o
+.iplt           0x0000839c        0x0
+ .iplt          0x0000839c        0x0 ./Project_Settings/Startup_Code/Vector_Table.o
 
-.igot.plt       0x00008398        0x0
- .igot.plt      0x00008398        0x0 ./Project_Settings/Startup_Code/Vector_Table.o
-                0x00008398                . = ALIGN (0x4)
+.igot.plt       0x0000839c        0x0
+ .igot.plt      0x0000839c        0x0 ./Project_Settings/Startup_Code/Vector_Table.o
+                0x0000839c                . = ALIGN (0x4)
                 [!provide]                PROVIDE (__exidx_start = .)
 
 .ARM.exidx      0x1fff8100        0x8
@@ -4553,7 +4553,7 @@ END GROUP
                 0x1fff8b10                . = ALIGN (0x4)
                 0x1fff8b10                __interrupts_ram_end = .
 
-.sram_data      0x1fff8b10      0x624 load address 0x00008398
+.sram_data      0x1fff8b10      0x624 load address 0x0000839c
                 0x1fff8b10                . = ALIGN (0x4)
                 0x1fff8b10                __data_ram_start = .
  *(.ramcode)
@@ -4660,9 +4660,9 @@ END GROUP
  *(.mcal_shared_data)
                 0x1fff9134                . = ALIGN (0x4)
                 0x1fff9134                __data_ram_end = .
-                0x000089bc                __DATA_ROM_END = (__DATA_ROM + (__data_ram_end - __data_ram_start))
+                0x000089c0                __DATA_ROM_END = (__DATA_ROM + (__data_ram_end - __data_ram_start))
 
-.sram_bss       0x1fff9134      0x81c load address 0x000089bc
+.sram_bss       0x1fff9134      0x81c load address 0x000089c0
                 0x1fff9140                . = ALIGN (0x10)
  *fill*         0x1fff9134        0xc 
                 0x1fff9140                __sram_bss_start = .
@@ -4852,7 +4852,7 @@ END GROUP
                 0x1fff9950        0x0
                 0x1fff9950                . = (. + (acmem_43_infls_code_rom_end - acmem_43_infls_code_rom_start))
 
-.heap           0x1fff9950      0x200 load address 0x000091d8
+.heap           0x1fff9950      0x200 load address 0x000091dc
                 0x1fff9950                . = ALIGN (0x4)
                 0x1fff9950                _end = .
                 0x1fff9950                end = .
@@ -4872,16 +4872,16 @@ int_results     0x1fff8000      0x100
                 0x20007000                __INT_SRAM_END = ORIGIN (ram_rsvd2)
                 0x1fff8b10                __RAM_INIT_START = __data_ram_start
                 0x1fff9134                __RAM_INIT_END = __data_ram_end
-                0x00008398                __ROM_INIT_START = __DATA_ROM
-                0x000089bc                __ROM_INIT_END = __DATA_ROM_END
+                0x0000839c                __ROM_INIT_START = __DATA_ROM
+                0x000089c0                __ROM_INIT_END = __DATA_ROM_END
                 0x1fff9140                __BSS_SRAM_START = __sram_bss_start
                 0x1fff9950                __BSS_SRAM_END = __sram_bss_end
                 0x00000810                __BSS_SRAM_SIZE = (__sram_bss_end - __sram_bss_start)
                 0x1fff8800                __RAM_INTERRUPT_START = __interrupts_ram_start
                 0x00000000                __ROM_INTERRUPT_START = __interrupts_rom_start
                 0x00000310                __ROM_INTERRUPT_END = __interrupts_rom_end
-                0x00008370                __INIT_TABLE = __init_table
-                0x0000838c                __ZERO_TABLE = __zero_table
+                0x00008374                __INIT_TABLE = __init_table
+                0x00008390                __ZERO_TABLE = __zero_table
                 0x00000001                __RAM_INIT = 0x1
                 0x00007664                Fls_ACEraseRomStart = acfls_code_rom_start
                 0x00007664                Fls_ACEraseRomEnd = acfls_code_rom_end

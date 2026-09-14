@@ -57,7 +57,7 @@
  static float    Edit_Max_Current;
  static uint32_t Edit_Wait_Time_Ms;
 
- static const char* Preset_Param_Name[OC_PRESET_PARAM_COUNT] = { "MAX CURRENT", "WAIT TIME  " };
+ static const char* Preset_Param_Name[OC_PRESET_PARAM_COUNT] = { "RATED CURRENT", "WAIT TIME    " };
 
  static volatile bool Compressor_Min_On_Time_Flag=RESET ;
  static volatile uint32_t Compressor_Min_On_Time_Tick_Count ;
@@ -1773,7 +1773,6 @@ else{
 }
 
 
-
 static void Enter_Preset_Edit_Mode(void){
     HMI.status = AC_off; HMI.compressor_state = Compressor_off;
     HMI.heater_state = Heater_off; HMI.condenser_state = Condenser_off;
@@ -1891,8 +1890,7 @@ static void Draw_Curr_View_Screen(void){
 
 static void Exit_Curr_View_Mode(void){
     UI_State = UI_Normal;
-    /* force the normal screen to fully redraw, same technique used when
-     * leaving preset-edit mode (see Exit_Preset_Edit_Mode) */
+
     Prev_Display_State = -1;
     Prev_Mode           = -1;
     Prev_Set_Temp        = -1;
@@ -1900,7 +1898,7 @@ static void Exit_Curr_View_Mode(void){
     LCD_Clear();
 }
 
-/* Call once per main-loop iteration, same as Process_Preset_Edit_Mode(). */
+
 void Process_Curr_View_Mode(void){
     static uint32_t Last_Refresh_Tick = 0U;
 
