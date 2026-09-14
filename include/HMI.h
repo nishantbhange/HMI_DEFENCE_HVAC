@@ -73,7 +73,7 @@
 #define HEATER_HYSTERESIS                   2U
 #define SOLENOID_TEMP_BUFFER                0.5f
 
-typedef enum { UI_Normal, UI_Preset_Edit } UI_State_t;
+typedef enum { UI_Normal, UI_Preset_Edit,UI_Show_Current } UI_State_t;
 extern volatile UI_State_t UI_State;
 
 #define PRESET_ENTRY_HOLD_MS   5000U   /* hold TEMP+ & COMP together 20 secs to enter */
@@ -210,7 +210,9 @@ typedef enum {
 	Event_Error ,
 	Event_Error_Clear,
 	Event_Machine_status,
-	Event_Enter_Preset_Mode
+	Event_Enter_Preset_Mode,
+	Event_Show_Current,
+	Event_Exit_Current_View
 
 
 }HMI_Event_t;
@@ -237,6 +239,7 @@ void Update_Heater_State(HMI_t *HMI);
 void LPSW_Error_Handler(bool Error_Set_Reset );
 void HPSW_Error_Handler(bool Error_Set_Reset );
 void Backlight_Cntrl(bool On_Off);
+void Process_Curr_View_Mode(void);
 
 
 //void Check_OverCurrent(void);

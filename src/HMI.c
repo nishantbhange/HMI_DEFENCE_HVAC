@@ -49,6 +49,11 @@
 
  static uint8_t  Preset_Edit_Param = 0U;
  static uint32_t Preset_Edit_Last_Activity_Tick = 0U;
+ /* Compressor key is also "OK" while editing OC presets - armed only
+  * after the key is seen released, same reasoning as the current-view
+  * close-on-fresh-press below (avoids the entry combo's release firing
+  * an immediate false OK). */
+ static volatile bool PresetEdit_CompKey_Was_Released = false;
  static float    Edit_Max_Current;
  static uint32_t Edit_Wait_Time_Ms;
 
@@ -63,6 +68,40 @@
  static void Exit_Preset_Edit_Mode(bool Save);
  void Process_Preset_Edit_Mode(void);
 
+ #define CURR_VIEW_HOLD_MS    5000U   // how long the key must be held to open the view
+ #define CURR_VIEW_WINDOW_MS 90*1000U   // how long the view stays up before auto-closing
+ #define CURR_VIEW_REFRESH_MS  300U   // how often the live reading is redrawn while shown
+
+ #define CURR_VIEW_COMPRESSOR 0U
+ #define CURR_VIEW_BLOWER     1U
+
+ static volatile bool     CompKey_Press_Active   = false;
+ static volatile uint32_t CompKey_Press_Tick     = 0U;
+ static volatile bool     CompKey_Hold_Fired     = false;
+
+ static volatile bool     BlowerKey_Press_Active = false;
+ static volatile uint32_t BlowerKey_Press_Tick   = 0U;
+ static volatile bool     BlowerKey_Hold_Fired   = false;
+
+ static volatile uint8_t  Curr_View_Source      = CURR_VIEW_COMPRESSOR;
+ static volatile uint32_t Curr_View_Start_Tick  = 0U;
+
+ static volatile bool     CurrView_Src_Was_Released = false;
+
+ static void Enter_Curr_View_Mode(void);
+ static void Draw_Curr_View_Screen(void);
+ static void Exit_Curr_View_Mode(void);
+
+ static inline float ADC_Volts_To_Amps(float volts){
+     if(volts <= 0.0f){
+         return 0.0f;
+     }
+     if(volts < 0.9567f){
+         return volts * (11.2f / 0.9567f);
+     }
+
+     return (6.269f * volts * volts) - (10.912f * volts) + 16.012f;
+ }
  static void update_state_ADC_Error(void );
  static void update_state_HPSW_Error(void );
  static void update_state_LPSW_Error(void );
@@ -93,7 +132,19 @@
 	        Handle_Preset_Edit_Event(CurrEvent);
 	        return;
 	    }
+	 if(UI_State == UI_Show_Current){
+	        if(CurrEvent == Event_Exit_Current_View){
+	            Exit_Curr_View_Mode();     /* same key pressed again -> close now */
+	        }
+	        /* everything else stays ignored - read-only screen; it also
+	         * auto-closes after CURR_VIEW_WINDOW_MS via Process_Curr_View_Mode() */
+	        return;
+	    }
 	switch(CurrEvent){
+
+	    case Event_Show_Current:
+	                             Enter_Curr_View_Mode();
+	                             break;
 
 	    case Event_Enter_Preset_Mode:
 	                             Enter_Preset_Edit_Mode();
@@ -660,21 +711,17 @@ else{
     if(HMI.mode==Auto_Mode){
 
  	   if((uint8_t)HMI.set_temp!=Prev_Set_Temp){
- 		snprintf(Display_Buf,sizeof(Display_Buf),"S%d",(uint8_t)HMI.set_temp);
+ 		snprintf(Display_Buf,sizeof(Display_Buf)," SET %d ",(uint8_t)HMI.set_temp);
  		LCD_String_XY(1, 0, Display_Buf);
  		Prev_Set_Temp=HMI.set_temp;
  	   }
  	   if((uint8_t)HMI.curr_temp != Prev_Curr_Temp){
- 		  uint16_t currfirst =
- 		      (uint32_t)(((ADC_Data.ADC_Compressor_Val * 3.0f) / 0.311f) * 100.0f);
 
  		  snprintf(Display_Buf, sizeof(Display_Buf),
- 		           "A%-3d I %u.%02u",
- 		           (int8_t)HMI.curr_temp,
- 		           currfirst / 100U,
- 		           currfirst % 100U);
+ 		           "AIR %-3d ",
+ 		           (int8_t)HMI.curr_temp);
 
- 		  LCD_String_XY(1, 4, Display_Buf);
+ 		  LCD_String_XY(1, 9, Display_Buf);
 
  		  Prev_Curr_Temp = HMI.curr_temp;
  	   }
@@ -749,7 +796,7 @@ else{
 	//these variables must be restored from eeprom !!
 
     HMI->set_temp=First_EEPROM_Data.Set_Temp;
-	HMI->status=First_EEPROM_Data.AC_State;
+	HMI->status=AC_on;
 	HMI->mode=First_EEPROM_Data.Curr_Mode;
     HMI->condenser_state=First_EEPROM_Data.Condenser_state;
     HMI->user_compressor_state=Compressor_off ;
@@ -845,7 +892,7 @@ void Led_Cntrl( Part_t part,bool Enable){
 //PTD15-heater
 	switch(part){
 
-		case Condenser :
+		case  Condenser :
 			if(Enable){
 				PINS_DRV_ClearPins(IP_PTE , 1U<<3);
 
@@ -857,7 +904,7 @@ void Led_Cntrl( Part_t part,bool Enable){
 
 		break ;
 
-		case Compressor :
+		case  Compressor :
 			if(Enable){
 				PINS_DRV_ClearPins(IP_PTB , 1U<<6);
 
@@ -1027,6 +1074,7 @@ void SysTick_Handler(void){
 	if(UI_State == UI_Normal){
 	    bool TempInc_Held = (PINS_DRV_ReadPins(IP_PTB) >> TEMP_INC_FLAG)      & 0x01U;
 	    bool CompSw_Held  = (PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U;
+	    bool BlowerSw_Held= (PINS_DRV_ReadPins(IP_PTD) >> BLOWER_SW_FLAG)     & 0x01U;
 
 	    if(TempInc_Held && CompSw_Held){
 	    	   OK_Key_Locked = true;
@@ -1039,10 +1087,95 @@ void SysTick_Handler(void){
 	            Preset_Combo_Fired = true;
 	            Event = Event_Enter_Preset_Mode;
 	        }
+	        /* combo is taking this press - don't also let the lone-key
+	         * tap/hold tracking below fire a toggle or a current view */
+	        CompKey_Press_Active = false;
 	    }
 	    else{
 	        Preset_Combo_Active = false;   /* release at any point -> clean reset, nothing to "clear" */
 	        Preset_Combo_Fired  = false;
+
+	        /* ---- Compressor key: short tap = toggle compressor,
+	         *      5s continuous hold = show compressor + condenser current.
+	         * No release interrupt on this pin, so we poll it directly here
+	         * and decide the outcome on release (tap) or on hitting the hold
+	         * threshold while still held down (hold) - same idea as PWR's
+	         * short/long press split above, just level-polled instead of
+	         * edge-driven. */
+	        if(CompSw_Held){
+	            if(!CompKey_Press_Active){
+	                CompKey_Press_Active = true;
+	                CompKey_Press_Tick   = Global_Tick_Count;
+	                CompKey_Hold_Fired   = false;
+	            }
+	            else if(!CompKey_Hold_Fired &&
+	                    (Global_Tick_Count - CompKey_Press_Tick) >= CURR_VIEW_HOLD_MS){
+	                CompKey_Hold_Fired = true;
+	                Curr_View_Source   = CURR_VIEW_COMPRESSOR;
+	                Event = Event_Show_Current;
+	            }
+	        }
+	        else{
+	            if(CompKey_Press_Active && !CompKey_Hold_Fired && !OK_Key_Locked){
+	                Event = Event_User_Compressor;   // genuine short tap-release
+	            }
+	            CompKey_Press_Active = false;
+	        }
+
+	        /* ---- Blower key: short tap = toggle blower,
+	         *      5s continuous hold = show blower current. Same pattern. */
+	        if(BlowerSw_Held){
+	            if(!BlowerKey_Press_Active){
+	                BlowerKey_Press_Active = true;
+	                BlowerKey_Press_Tick   = Global_Tick_Count;
+	                BlowerKey_Hold_Fired   = false;
+	            }
+	            else if(!BlowerKey_Hold_Fired &&
+	                    (Global_Tick_Count - BlowerKey_Press_Tick) >= CURR_VIEW_HOLD_MS){
+	                BlowerKey_Hold_Fired = true;
+	                Curr_View_Source     = CURR_VIEW_BLOWER;
+	                Event = Event_Show_Current;
+	            }
+	        }
+	        else{
+	            if(BlowerKey_Press_Active && !BlowerKey_Hold_Fired){
+	                Event = Event_Blower;   // genuine short tap-release
+	            }
+	            BlowerKey_Press_Active = false;
+	        }
+	    }
+	}
+	else if(UI_State == UI_Show_Current){
+	    /* Only the key that opened this screen can close it, and only on a
+	     * fresh press - i.e. it must be seen released at least once first.
+	     * Level-polled the same way the hold-to-open detection above is,
+	     * deliberately not routed through the edge/debounce path in GPIO.c. */
+	    bool SrcKey_Held = (Curr_View_Source == CURR_VIEW_COMPRESSOR)
+	                        ? ((PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U)
+	                        : ((PINS_DRV_ReadPins(IP_PTD) >> BLOWER_SW_FLAG)     & 0x01U);
+
+	    if(!SrcKey_Held){
+	        CurrView_Src_Was_Released = true;        /* armed: key has been let go since opening */
+	    }
+	    else if(CurrView_Src_Was_Released){
+	        Event = Event_Exit_Current_View;         /* fresh press after release -> close now */
+	        CurrView_Src_Was_Released = false;       /* consume so it can't re-fire every tick */
+	    }
+	}
+	else if(UI_State == UI_Preset_Edit){
+	    /* Compressor key doubles as "OK" here (advance MAX CURRENT -> WAIT
+	     * TIME -> save+exit). Needs its own poll because the generator above
+	     * only runs for UI_State==UI_Normal. Same release-then-press gating
+	     * as the current-view close, so releasing the entry-combo keys can't
+	     * itself be mistaken for an OK press. */
+	    bool CompSw_Held = (PINS_DRV_ReadPins(IP_PTC) >> COMPRESSOR_SW_FLAG) & 0x01U;
+
+	    if(!CompSw_Held){
+	        PresetEdit_CompKey_Was_Released = true;
+	    }
+	    else if(PresetEdit_CompKey_Was_Released){
+	        Event = Event_User_Compressor;           /* OK - confirm/advance/save */
+	        PresetEdit_CompKey_Was_Released = false;
 	    }
 	}
 
@@ -1574,6 +1707,7 @@ static void Enter_Preset_Edit_Mode(void){
     Edit_Max_Current  = HMI.OC_Current_Val;
     Edit_Wait_Time_Ms = HMI.OC_Time_Val;
     Preset_Edit_Param    = 0U;
+    PresetEdit_CompKey_Was_Released = false;
     UI_State = UI_Preset_Edit;
     Preset_Edit_Last_Activity_Tick = Global_Tick_Count;
     Draw_Preset_Edit_Screen();
@@ -1641,5 +1775,69 @@ void Process_Preset_Edit_Mode(void){
     if(UI_State != UI_Preset_Edit) return;
     if((Global_Tick_Count - Preset_Edit_Last_Activity_Tick) >= PRESET_EDIT_IDLE_MS){
         Exit_Preset_Edit_Mode(false);   // timeout -> discard, don't silently commit a half-set value
+    }
+}
+
+/* ---- Debug/test current-view screen (5s hold to open, 20s auto-close) ---- */
+
+static void Enter_Curr_View_Mode(void){
+    Curr_View_Start_Tick = Global_Tick_Count;
+    UI_State = UI_Show_Current;
+    CurrView_Src_Was_Released = false;   /* key is still down from opening it - arm only after it's let go */
+    LCD_Clear();
+    Draw_Curr_View_Screen();
+}
+
+static void Draw_Curr_View_Screen(void){
+    char buf[17];
+
+    if(Curr_View_Source == CURR_VIEW_COMPRESSOR){
+        float    comp_a     = ADC_Volts_To_Amps(ADC_Data.ADC_Compressor_Val);
+        float    cond_a     = ADC_Volts_To_Amps(ADC_Data.ADC_Condenser_Val);
+        uint16_t comp_x100  = (uint16_t)(comp_a * 100.0f);
+        uint16_t cond_x100  = (uint16_t)(cond_a * 100.0f);
+
+        snprintf(buf, sizeof(buf), "COMP  %u.%02u A", comp_x100/100U, comp_x100%100U);
+        LCD_String_XY(0, 0, buf);
+        snprintf(buf, sizeof(buf), "COND  %u.%02u A", cond_x100/100U, cond_x100%100U);
+        LCD_String_XY(1, 0, buf);
+    }
+    else{ // CURR_VIEW_BLOWER
+        float    blow_a    = ADC_Volts_To_Amps(ADC_Data.ADC_Blower_Val);
+        uint16_t blow_x100 = (uint16_t)(blow_a * 100.0f);
+
+        LCD_String_XY(0, 0, "BLOWER CURRENT  ");
+        snprintf(buf, sizeof(buf), "%u.%02u A", blow_x100/100U, blow_x100%100U);
+        LCD_String_XY(1, 0, buf);
+    }
+}
+
+static void Exit_Curr_View_Mode(void){
+    UI_State = UI_Normal;
+    /* force the normal screen to fully redraw, same technique used when
+     * leaving preset-edit mode (see Exit_Preset_Edit_Mode) */
+    Prev_Display_State = -1;
+    Prev_Mode           = -1;
+    Prev_Set_Temp        = -1;
+    Prev_Curr_Temp       = -1;
+    LCD_Clear();
+}
+
+/* Call once per main-loop iteration, same as Process_Preset_Edit_Mode(). */
+void Process_Curr_View_Mode(void){
+    static uint32_t Last_Refresh_Tick = 0U;
+
+    if(UI_State != UI_Show_Current) return;
+    if(HMI.error_flag == error_flag_set){
+           Exit_Curr_View_Mode();    // let the error screen take over immediately
+           return;
+       }
+    if((Global_Tick_Count - Curr_View_Start_Tick) >= CURR_VIEW_WINDOW_MS){
+        Exit_Curr_View_Mode();
+        return;
+    }
+    if((Global_Tick_Count - Last_Refresh_Tick) >= CURR_VIEW_REFRESH_MS){
+        Last_Refresh_Tick = Global_Tick_Count;
+        Draw_Curr_View_Screen();   // keep the reading live while the screen is up
     }
 }

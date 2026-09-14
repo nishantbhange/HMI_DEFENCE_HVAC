@@ -52,12 +52,27 @@
 
 #define ADC_SC1_ADCH_DISABLE_MODULE         (0x1FU)
 
+
+
+#define CURR_AVG_SAMPLES   24U
+
+typedef struct {
+    float   buf[CURR_AVG_SAMPLES];
+    float   sum;
+    uint8_t idx;
+    uint8_t count;
+} ADC_RollingAvg_t;
+
+extern volatile ADC_RollingAvg_t Compressor_Avg;
+extern volatile ADC_RollingAvg_t Condenser_Avg;
+extern volatile ADC_RollingAvg_t Blower_Avg;
+
 typedef enum
 {
     ADC_TEMP_SENSOR     = 13,
-    ADC_COMPRESSOR_CT   = 9,
+    ADC_COMPRESSOR_CT   = 15,
     ADC_CONDENSER_CT    = 8,
-    ADC_BLOWER_CT       = 15
+    ADC_BLOWER_CT       = 9
 } ADC_Channel_t;
 
 typedef enum{

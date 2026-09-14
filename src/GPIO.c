@@ -6,7 +6,7 @@
  volatile uint32_t Press_Start_Tick=0;
  volatile bool Long_Press_Flag=RESET ;
  volatile bool OK_Key_Locked=RESET;
-volatile uint32_t Last_Tick[BTN_COUNT]={0};
+volatile uint32_t Last_Tick[BTN_COUNT]={0};   // kept for ABI/back-compat, no longer used for gating
 
 /* ---------------------------------------------------------------------
  * Noise-immune "confirm after quiet" debounce.
@@ -36,6 +36,24 @@ static inline void Btn_Note_Edge(Button_Id_t id){
     Btn_Last_Edge_Tick[id] = Global_Tick_Count;
     Btn_Pending[id]        = SET;
 }
+
+// --- ADC.c or GPIO.c: add the rolling-average buffers + push helper ---
+
+volatile ADC_RollingAvg_t Compressor_Avg = {0};
+volatile ADC_RollingAvg_t Condenser_Avg  = {0};
+volatile ADC_RollingAvg_t Blower_Avg     = {0};
+
+static inline float RollingAvg_Push(volatile ADC_RollingAvg_t *ra, float sample){
+    ra->sum -= ra->buf[ra->idx];
+    ra->buf[ra->idx] = sample;
+    ra->sum += sample;
+    ra->idx = (uint8_t)((ra->idx + 1U) % CURR_AVG_SAMPLES);
+    if(ra->count < CURR_AVG_SAMPLES){
+        ra->count++;
+    }
+    return ra->sum / (float)ra->count;   // divide by count, not CURR_AVG_SAMPLES, so it doesn't read low while filling up
+}
+
 
 /* Call once at startup (after Interrupt_Init has cleared ISFR) so the
  * level-type buttons don't report a false "change" the first time the
@@ -122,11 +140,11 @@ void Buttons_Poll_1ms(void){
             break;
 
         case BTN_COMPRESSOR_SW:
-            if((PINS_DRV_ReadPins(IP_PTC)>>COMPRESSOR_SW_FLAG)&0x01U){
-                if(!OK_Key_Locked){
-                    Event = Event_User_Compressor;
-                }
-            }
+            // Tap vs 5s-hold is now decided in HMI.c's SysTick_Handler via
+            // continuous pin polling (this pin has no release interrupt, so
+            // we can't tell a tap from the start of a hold here) - a short
+            // tap fires Event_User_Compressor, a 5s hold opens the
+            // compressor+condenser current view instead. See CompKey_* there.
             break;
 
         case BTN_HEATER_SW:
@@ -136,9 +154,8 @@ void Buttons_Poll_1ms(void){
             break;
 
         case BTN_BLOWER_SW:
-            if((PINS_DRV_ReadPins(IP_PTD)>>BLOWER_SW_FLAG)&0x01U){
-                Event = Event_Blower;
-            }
+            // Tap vs 5s-hold decided in HMI.c's SysTick_Handler, same reason
+            // as BTN_COMPRESSOR_SW above. See BlowerKey_* there.
             break;
 
         default: break;
@@ -277,13 +294,21 @@ void ADC0_IRQHandler(void){
 
 		    switch(Current_ADC_Channel){
 		        case ADC_CONDENSER_CT:
-		            ADC_Data.ADC_Condenser_Val = raw_voltage;
+		            ADC_Data.ADC_Condenser_Val = RollingAvg_Push(&Condenser_Avg, raw_voltage);
 		            break;
 		        case ADC_COMPRESSOR_CT:
               //oc current value is a input from user in runtime !!
 		        	 V_at_Rated_curr=((HMI.OC_Current_Val)*0.311f)/3.0f;
-		        	 ADC_Data.ADC_Compressor_Val = raw_voltage;
-		            if( raw_voltage>= V_at_Rated_curr){
+		        	 float comp_avg = RollingAvg_Push(&Compressor_Avg, raw_voltage);
+		            // Always capture the live reading for display, regardless of
+		            // whether it happens to be above the overcurrent threshold.
+		            // Previously this was only written in the "below threshold"
+		            // branch below, so a reading that landed at/above threshold
+		            // (including possibly the very first sample after boot) froze
+		            // the displayed value forever - that's why it was stuck at 0.00A.
+		            ADC_Data.ADC_Compressor_Val =comp_avg;
+
+		            if( comp_avg>= V_at_Rated_curr){
 
 		            	 if(Check_Status_Flag==RESET){
 		            	        Compressor_Overcurrent_Time_ms=0;   // only zero it the moment overcurrent begins
@@ -292,7 +317,7 @@ void ADC0_IRQHandler(void){
 		            	Check_Status_Flag=SET;
 
 
-		            	if( raw_voltage<(1.5f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=HMI.OC_Time_Val)
+		            	if( comp_avg<(1.5f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=HMI.OC_Time_Val)
 		            	{
 		            		Event=Event_Error;
 		            		Current_Error=Error_Event_OC;
@@ -300,7 +325,7 @@ void ADC0_IRQHandler(void){
 		            		Check_Status_Flag=RESET;
 
 		            	}
-		            	else if( raw_voltage>=(1.5f*V_at_Rated_curr) && raw_voltage<(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_30SEC){
+		            	else if( comp_avg>=(1.5f*V_at_Rated_curr) && comp_avg<(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_30SEC){
 
 		            		Event=Event_Error;
 		            		Current_Error=Error_Event_OC;
@@ -308,7 +333,7 @@ void ADC0_IRQHandler(void){
 		            		Check_Status_Flag=RESET;
 
 		            	}
-		            	else if( raw_voltage>=(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_5SEC){
+		            	else if( comp_avg>=(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_5SEC){
 
 		            		Event=Event_Error;
 		            		Current_Error=Error_Event_OC;
@@ -320,7 +345,6 @@ void ADC0_IRQHandler(void){
 
 
 		            }else{
-
 		            	Check_Status_Flag=RESET;
 		            	Compressor_Overcurrent_Time_ms=0;
 	                  if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
@@ -332,7 +356,7 @@ void ADC0_IRQHandler(void){
 
 		            break;
 		        case ADC_BLOWER_CT:
-		            ADC_Data.ADC_Blower_Val = raw_voltage;
+		            ADC_Data.ADC_Blower_Val = RollingAvg_Push(&Blower_Avg, raw_voltage);
 		            break;
 		        case ADC_TEMP_SENSOR:
 		            V_Temp = raw_voltage;
