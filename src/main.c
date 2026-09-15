@@ -30,6 +30,9 @@
 #include "LCD.h"
 #include "EEPROM.h"
 #include "Delay.h"
+#include "Wdog_Ip.h"
+
+#define WDOG_INST                    (0U)
 
 static EEPROM_Data_t EEPROM_Prev_Snapshot;
 
@@ -38,6 +41,7 @@ static EEPROM_Data_t EEPROM_Prev_Snapshot;
 
 #define EEPROM_WRITE_QUIET_PERIOD_MS   1000U
 #define Delay_5_SEC                    5000U
+#define Delay_1_SEC                    1000U
 
  volatile bool ADC_Timeout_Flag;
  volatile uint32_t ADC_Timeout_Count;
@@ -100,7 +104,11 @@ int main(void)
     LCD_Clear();
     LCD_String_XY(0,3,Start_Msg1);
     LCD_String_XY(1,2,Start_Msg2);
-    DelayMs(Delay_5_SEC);
+    for (uint8_t i=0;i<5;i++)
+    {
+        DelayMs(Delay_1_SEC);
+        Wdog_Ip_Service(WDOG_INST);
+    }
     LCD_Clear();
     for(;;)
     {
@@ -123,6 +131,7 @@ int main(void)
         Service_ADC();
         Process_Preset_Edit_Mode();
         Process_Curr_View_Mode();
+        Wdog_Ip_Service(WDOG_INST);
 
 
     }
@@ -134,6 +143,8 @@ static void System_Init(void)
 {
 	 /* --- 1. Clock, before anything else touches a peripheral --- */
  	    Clock_Ip_Init(Clock_Ip_aClockConfig);
+
+ 	    Wdog_Ip_Init(WDOG_INST, &Wdog_Ip_Cfg0);
 
 	#if defined (FEATURE_CLOCK_IP_HAS_SPLL_CLK)
 	    uint32_t Pll_Lock_Timeout = PLL_LOCK_TIMEOUT_ITER;   /* pick a generous bounded value */

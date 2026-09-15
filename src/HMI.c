@@ -809,6 +809,7 @@ else{
     HMI->user_Heater_state=Heater_off;
     HMI->OC_Current_Val=10.0f;
     HMI->OC_Time_Val=60000U;
+    HMI->heater2_state=Heater_off;
 
     // push defaults into the RAM shadow
 

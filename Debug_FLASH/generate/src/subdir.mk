@@ -5,15 +5,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../generate/src/Clock_Ip_Cfg.c \
-../generate/src/OsIf_Cfg.c 
+../generate/src/OsIf_Cfg.c \
+../generate/src/Wdog_Ip_PBcfg.c 
 
 OBJS += \
 ./generate/src/Clock_Ip_Cfg.o \
-./generate/src/OsIf_Cfg.o 
+./generate/src/OsIf_Cfg.o \
+./generate/src/Wdog_Ip_PBcfg.o 
 
 C_DEPS += \
 ./generate/src/Clock_Ip_Cfg.d \
-./generate/src/OsIf_Cfg.d 
+./generate/src/OsIf_Cfg.d \
+./generate/src/Wdog_Ip_PBcfg.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

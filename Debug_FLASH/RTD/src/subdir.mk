@@ -30,7 +30,10 @@ C_SRCS += \
 ../RTD/src/Port_Ci_Port_Ip.c \
 ../RTD/src/SchM_Dio.c \
 ../RTD/src/SchM_Mcu.c \
-../RTD/src/SchM_Port.c 
+../RTD/src/SchM_Port.c \
+../RTD/src/SchM_Wdg.c \
+../RTD/src/Wdog_Ip.c \
+../RTD/src/Wdog_Ip_Irq.c 
 
 OBJS += \
 ./RTD/src/Clock_Ip.o \
@@ -59,7 +62,10 @@ OBJS += \
 ./RTD/src/Port_Ci_Port_Ip.o \
 ./RTD/src/SchM_Dio.o \
 ./RTD/src/SchM_Mcu.o \
-./RTD/src/SchM_Port.o 
+./RTD/src/SchM_Port.o \
+./RTD/src/SchM_Wdg.o \
+./RTD/src/Wdog_Ip.o \
+./RTD/src/Wdog_Ip_Irq.o 
 
 C_DEPS += \
 ./RTD/src/Clock_Ip.d \
@@ -88,7 +94,10 @@ C_DEPS += \
 ./RTD/src/Port_Ci_Port_Ip.d \
 ./RTD/src/SchM_Dio.d \
 ./RTD/src/SchM_Mcu.d \
-./RTD/src/SchM_Port.d 
+./RTD/src/SchM_Port.d \
+./RTD/src/SchM_Wdg.d \
+./RTD/src/Wdog_Ip.d \
+./RTD/src/Wdog_Ip_Irq.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
