@@ -230,15 +230,15 @@ extern volatile  HMI_t HMI;
 extern volatile  uint32_t Global_Tick_Count;
 extern volatile bool Check_Status_Flag ;
 
-void Update_Output(HMI_t *HMI);
+void Update_Output(volatile HMI_t *HMI);
 void Update_Display(HMI_t HMI);
 void HMI_Process_Event(HMI_Event_t Event );
 void HMI_Init(HMI_t *HMI );
 void Relay_Cntrl( Part_t part,bool Enable);
 void Led_Cntrl( Part_t part,bool Enable);
 void Error_Handler( void  );
-void Update_Compressor_State(HMI_t *HMI);
-void Update_Heater_State(HMI_t *HMI);
+void Update_Compressor_State(volatile HMI_t *HMI);
+void Update_Heater_State(volatile HMI_t *HMI);
 void LPSW_Error_Handler(bool Error_Set_Reset );
 void HPSW_Error_Handler(bool Error_Set_Reset );
 void Backlight_Cntrl(bool On_Off);

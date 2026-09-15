@@ -118,9 +118,8 @@ int main(void)
         HMI.curr_temp = ADC_Data.Temp_Sensor_Val;
         if(HMI.error_flag!=error_flag_set){
         Update_Compressor_State((volatile HMI_t *)&HMI);
-        Update_Heater_State((volatile HMI_t *)&HMI);
         }
-
+        Update_Heater_State((volatile HMI_t *)&HMI);
 
         Update_Output((volatile HMI_t *)&HMI);
 
@@ -168,8 +167,13 @@ static void System_Init(void)
 
 	    LPIT_Init();
 
+	    Interrupt_Init();
+	    LCD_Init();
+	    LCD_Clear();
+
 	    EEPROM_Timeout_Flag=SET;
 	    while(EEPROM_Timeout_Count<=TICK_COUNT_500MS){
+	    Wdog_Ip_Service(WDOG_INST);
 	    if(EEPROM_Init()){
 	    	EEPROM_Timeout_Flag=RESET;
 	    	EEPROM_Timeout_Count=0;
@@ -180,6 +184,8 @@ static void System_Init(void)
 	    	 LCD_Clear();
 	    	 LCD_String_XY(0,0,Error_Msg1);
 	    	 LCD_String_XY(1,0,Error_Msg3);
+	    	 DelayMs(Delay_1_SEC);
+	    	 Wdog_Ip_Service(WDOG_INST);
 	    	 EEPROM_Timeout_Flag=RESET;
 	    	 EEPROM_Timeout_Count=0;
 	    	 break;
@@ -196,13 +202,11 @@ static void System_Init(void)
 
 
 
-    Interrupt_Init();
-    LCD_Init();
-    LCD_Clear();
 
 
     ADC_Timeout_Flag=SET;
       while(ADC_Timeout_Count<=TICK_COUNT_500MS){
+      Wdog_Ip_Service(WDOG_INST);
       if(ADC_Init()){
       ADC_Timeout_Flag=RESET;
       ADC_Timeout_Count=0;
@@ -213,6 +217,8 @@ static void System_Init(void)
       	 LCD_Clear();
       	 LCD_String_XY(0,0,Error_Msg2);
       	 LCD_String_XY(1,0,Error_Msg3);
+      	 DelayMs(Delay_1_SEC);
+      	 Wdog_Ip_Service(WDOG_INST);
       	 ADC_Timeout_Flag=RESET;
       	 ADC_Timeout_Count=0;
       	 break;

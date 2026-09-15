@@ -264,17 +264,6 @@ static volatile float V_at_Rated_curr ;
   }
 
 
-/* Superseded by Buttons_Poll_1ms()'s confirm-after-quiet debounce above.
- * Left unused rather than deleted in case anything else in the project
- * still links against it - safe to remove once you've confirmed nothing
- * else calls it. */
-static bool Debounce_Check(Button_Id_t id) {
-    if ((Global_Tick_Count - Last_Tick[id]) > DEBOUNCE_MS) {
-        Last_Tick[id] = Global_Tick_Count;
-        return true;
-    }
-    return false;
-}
 //in s32k144 using RTD,  interrupts are delivered through INTctrl , startup file belongs to INTctrl
 //these handlers function pointer is modified in startup file so make sure to change vector table
 

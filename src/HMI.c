@@ -267,7 +267,14 @@
 		                   for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
 		                	   EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
 		                   }
-
+		                   if(HMI.mode!=Auto_Mode ){
+		                	                    	  HMI.mode=Auto_Mode;
+		                	                    	  HMI.compressor_state=Compressor_off;
+		                	                    	  Manual_Mode_Flag=RESET;
+		                	                    	  Manual_Mode_Count=0;
+		                	                    	  Systick_Tick_Count_Stagger=0;
+		                	                    	  EEPROM.Curr_Mode=HMI.mode;
+		                	                      }
 
 			 	 	 	    break;
 	 case Event_Error_Clear :
@@ -285,14 +292,7 @@
 	                     		                   }
 	                      Compressor_Min_On_Time_Tick_Count=0;
 	                      Compressor_Min_On_Time_Flag=RESET ;
-	                      if(HMI.mode!=Auto_Mode ){
-	                    	  HMI.mode=Auto_Mode;
-	                    	  HMI.compressor_state=Compressor_off;
-	                    	  Manual_Mode_Flag=RESET;
-	                    	  Manual_Mode_Count=0;
-	                    	  Systick_Tick_Count_Stagger=0;
-	                    	  EEPROM.Curr_Mode=HMI.mode;
-	                      }
+
 
 		                    break;
 	 default:
@@ -302,7 +302,7 @@
 
 }
 
- void Update_Output(HMI_t *HMI){
+ void Update_Output(volatile HMI_t *HMI){
 	if(HMI->mode==Auto_Mode && HMI->error_flag==error_flag_reset && HMI->status==AC_on){
 		//auto mode
 		//in auto mode condenser on and blower on and vent off
@@ -442,11 +442,7 @@
 			           // Relay_Cntrl(Vent,Vent_on);
 						Led_Cntrl(Vent,Vent_on);
 
-             if(HMI->heater2_state!=Heater_off){
-            	 HMI->heater2_state=Heater_off;
-            	 Relay_Cntrl(Heater2 ,Heater_off);
 
-             }
 						//heater : user-controlled
 			if(HMI->user_Heater_state==Heater_on){
 				//heater on
@@ -455,6 +451,7 @@
 				        Led_Cntrl(Compressor,Compressor_off);
 				        Relay_Cntrl(Solenoid_Valve,Solenoid_Valve_off);
 						Relay_Cntrl(Heater,Heater_on);
+						Relay_Cntrl(Heater2,Heater_on);
 						Led_Cntrl(Heater,Heater_on);
 						Relay_Cntrl(Condenser,Condenser_off);
 						Led_Cntrl(Condenser,Condenser_off);
@@ -469,6 +466,7 @@
 				//heater off
 
 						Relay_Cntrl(Heater,Heater_off);
+						Relay_Cntrl(Heater2,Heater_off);
 						Led_Cntrl(Heater,Heater_off);
 						HMI->user_Heater_state=Heater_off;
 
@@ -480,6 +478,7 @@
 			if(HMI->user_compressor_state==Compressor_on)
 							{
 				        Relay_Cntrl(Heater,Heater_off);
+				        Relay_Cntrl(Heater2,Heater_off);
 						Led_Cntrl(Heater,Heater_off);
 
 						 //condenser + solenoid ON immediately (same pressure-balancing sequence as auto mode)
@@ -563,9 +562,27 @@
 		}
 
 else{
-             //error condition
+
+	if((HMI->Active_Errors & ((1U<<ADC_Active_Error_Bit)|(1U<<OC_Active_Error_Bit))) != 0U){
+	    // force heater/heater2 off here, once, regardless of which
+	    // compressor-side handler ends up running below
+		HMI->heater_state=Heater_off;
+		HMI->heater2_state=Heater_off;
+		Relay_Cntrl(Heater,Heater_off);
+		Relay_Cntrl(Heater2,Heater_off);
+		Led_Cntrl(Heater,Heater_off);
+
+	}
+	          //error condition
+	         //compressor overcurrent error-only blower on
+			 if((HMI->Active_Errors>>OC_Active_Error_Bit)&0x01){
+				//everything off except blower
+				update_state_OC_Error();
+
+						}
+
              //ADC error -compressor on for 7 mins compressor off 3 mins do it in cycles
-			if((HMI->Active_Errors>>ADC_Active_Error_Bit)&0x01){
+			 else if((HMI->Active_Errors>>ADC_Active_Error_Bit)&0x01){
 				//everything off except blower
 				update_state_ADC_Error();
 
@@ -582,12 +599,7 @@ else{
 				update_state_HPSW_Error();
 
 			}
-			//compressor overcurrent error-only blower on
-			else if((HMI->Active_Errors>>OC_Active_Error_Bit)&0x01){
-				//everything off except blower
-				update_state_OC_Error();
 
-						}
 
 		}
 
@@ -596,7 +608,7 @@ else{
 
 }
 
- void Update_Compressor_State(HMI_t *HMI){
+ void Update_Compressor_State(volatile HMI_t *HMI){
 	 if(HMI->error_flag == error_flag_set)
 	 {
 	     return;
@@ -630,9 +642,11 @@ else{
 	 }
 
 }
- void Update_Heater_State(HMI_t *HMI){
+ void Update_Heater_State(volatile HMI_t *HMI){
+	 bool Heater_Blocking_Error = (HMI->Active_Errors &
+	                                ((1U<<ADC_Active_Error_Bit)|(1U<<OC_Active_Error_Bit))) != 0U;
 
-	 if (HMI->mode != Auto_Mode || HMI->error_flag == error_flag_set  )
+	 if (HMI->mode != Auto_Mode || Heater_Blocking_Error)
 	        return;
 
 	   /* First automatic heater activation after power-up */
@@ -1615,7 +1629,7 @@ static void update_state_ADC_Error(void ){
 					}
 
 }
-
+//LPSW and HPSW error should respect heater and should not turn them off if they were on
 static void update_state_HPSW_Error(void ){
 	if(HMI.Blower_state!=Blower_on){
 					HMI.Blower_state=Blower_on;
@@ -1630,21 +1644,32 @@ static void update_state_HPSW_Error(void ){
 					Led_Cntrl(Vent,Vent_off);
 				}
 
-	                    //heater2 off
-	 if(HMI.heater2_state!= Heater_off){
 
-	                  HMI.heater2_state=Heater_off;
+	 if(HMI.heater2_state== Heater_off){
+
 	                  Relay_Cntrl(Heater2,Heater_off);
 
 	                         }
+	 else{
 
-					//heater off
-	if(HMI.heater_state!=Heater_off || HMI.user_Heater_state!=Heater_off){
+			          Relay_Cntrl(Heater2,Heater_on);
+
+	                         }
+
+
+	if(HMI.heater_state==Heater_off ){
 					HMI.heater_state=Heater_off;
 					HMI.user_Heater_state=Heater_off;
 					Relay_Cntrl(Heater,Heater_off);
 					Led_Cntrl(Heater,Heater_off);
 													}
+	else{
+
+					HMI.user_Heater_state=Heater_on;
+					Relay_Cntrl(Heater,Heater_on);
+					Led_Cntrl(Heater,Heater_on);
+
+	}
 					//compressor off
 	if(HMI.Compressor_Error_State!=Compressor_off || HMI.user_compressor_state!=Compressor_off ||HMI.compressor_state!=Compressor_off){
 					HMI.Compressor_Error_State=Compressor_off;
@@ -1683,20 +1708,31 @@ static void update_state_LPSW_Error(void ){
 					Led_Cntrl(Vent,Vent_off);
 													}
 
-                    //heater2 off
-   if(HMI.heater2_state!= Heater_off){
+	 if(HMI.heater2_state== Heater_off){
 
-                   HMI.heater2_state=Heater_off;
-                   Relay_Cntrl(Heater2,Heater_off);
+	                  Relay_Cntrl(Heater2,Heater_off);
 
-         }
-					 //heater off
-	if(HMI.heater_state!=Heater_off || HMI.user_Heater_state!=Heater_off){
+	                         }
+	 else{
+
+			          Relay_Cntrl(Heater2,Heater_on);
+
+	                         }
+
+
+	if(HMI.heater_state==Heater_off ){
 					HMI.heater_state=Heater_off;
 					HMI.user_Heater_state=Heater_off;
 					Relay_Cntrl(Heater,Heater_off);
 					Led_Cntrl(Heater,Heater_off);
 													}
+	else{
+
+					HMI.user_Heater_state=Heater_on;
+					Relay_Cntrl(Heater,Heater_on);
+					Led_Cntrl(Heater,Heater_on);
+
+	}
 					//compressor off
 	if(HMI.Compressor_Error_State!=Compressor_off || HMI.user_compressor_state!=Compressor_off ||HMI.compressor_state!=Compressor_off){
 					HMI.Compressor_Error_State=Compressor_off;
