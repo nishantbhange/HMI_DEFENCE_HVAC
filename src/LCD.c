@@ -9,26 +9,31 @@ static void LCD_Write_Data(char data);
 //#include <pins_driver.h>
 //#include <pin_mux.h>
 void LCD_Init(void ){
-	 // 15ms wait time after power on
-	    DelayMs(15);
+       LCD_Write_Pin(LCD_RS, 0);
+       LCD_Write_Pin(LCD_EN, 0);
+       // >40 ms after VCC rises above 4.5 V
+       DelayMs(50);
+       LCD_Command(0x30); DelayMs(5);    // >4.1 ms
+       LCD_Command(0x30); DelayUs(150);  // >100 us
+       LCD_Command(0x30); DelayUs(150);
+
 	 // uses 2 line and initialize 5*7 matrix of LCD
-	    LCD_Command((char)TWOLINES_5X8MATRIX);
-	    DelayUs(50);
-	 // uses 2 line and initialize 5*7 matrix of LCD
-	    LCD_Command((char)TWOLINES_5X8MATRIX);
-	    DelayUs(50);
-	 // uses 2 line and initialize 5*7 matrix of LCD
-	    LCD_Command((char)TWOLINES_5X8MATRIX);
-	    DelayUs(50);
+	   LCD_Command((char)TWOLINES_5X8MATRIX);
+	   DelayUs(50);
+
+	    // display on cursor off
+	   LCD_Command((char)DISPLAYON_CURSOROFF);
+	   DelayUs(50);
 	 // clear display screen
-	    LCD_Command((char)CLEAR_DISPLAY);
-	    DelayMs(2);
+	   LCD_Command((char)CLEAR_DISPLAY);
+	   DelayMs(2);
+	    // increment cursor (shift cursor to right)
+	   LCD_Command((char)INCREMENT_CURSOR);
+	   DelayUs(50);
 	 // display on cursor off
-	    LCD_Command((char)DISPLAYON_CURSOROFF);
-	    DelayUs(50);
-	 // increment cursor (shift cursor to right)
-	    LCD_Command((char)INCREMENT_CURSOR);
-	    DelayUs(50);
+	   LCD_Command((char)DISPLAYON_CURSOROFF);
+	   DelayUs(50);
+
 
 }
 void LCD_String_XY(char row ,char position ,const char* msg){

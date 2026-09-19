@@ -34,7 +34,7 @@
 #define SW_PIN_LPSW   3U
 #define SW_PIN_HPSW   2U
 
-//PTB5 temp++
+//PTB5 temp--
 //PTB4 PWR
 //PTA3 LPSW
 //PTA2 HPSW
@@ -43,7 +43,7 @@
 //PTC2 -compressor switch
 //PTC3 -Heater Switch
 //PTC17 -ADC channel 15
-//PTC15 -ADC channel 12
+//PTC15 -ADC channel 13
 
 #define TEMP_INC_FLAG 5U
 #define TEMP_INCREASE_FLAG 8U
@@ -57,7 +57,7 @@
 #define HEATER_SW_FLAG          3U
 
 
-//PTE8 -Temp--
+//PTE8 -Temp++
 #define TEMP_DEC_FLAG           8U
 //PTD7 -Blower Switch
 #define BLOWER_SW_FLAG          7U

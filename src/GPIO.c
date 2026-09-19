@@ -8,6 +8,14 @@
  volatile bool OK_Key_Locked=RESET;
 volatile uint32_t Last_Tick[BTN_COUNT]={0};
 
+/* PTB6 = XTAL, PTB7 = EXTAL on S32K144. This board uses them as GPIO for the
+ * compressor and blower LEDs, so the system oscillator MUST stay disabled.
+ * S32K1xx RM 4.5.1: enabling SOSC with GPIO on these pins can damage the device. */
+#define BOARD_USES_PTB6_PTB7_AS_GPIO   1
+#if (BOARD_USES_PTB6_PTB7_AS_GPIO) && defined(BOARD_SOSC_ENABLED)
+#error "SOSC must not be enabled: PTB6/PTB7 are used as GPIO (XTAL/EXTAL pins)."
+#endif
+
 /* ---------------------------------------------------------------------
  * Noise-immune "confirm after quiet" debounce.
  *
@@ -37,7 +45,7 @@ static inline void Btn_Note_Edge(Button_Id_t id){
     Btn_Pending[id]        = SET;
 }
 
-// --- ADC.c or GPIO.c: add the rolling-average buffers + push helper ---
+
 
 volatile ADC_RollingAvg_t Compressor_Avg = {0};
 volatile ADC_RollingAvg_t Condenser_Avg  = {0};
@@ -256,7 +264,8 @@ static volatile float V_at_Rated_curr ;
 	  NVIC_EnableIRQ(PORTE_IRQn);
 
 	  // ADC interrupt enable
-	  NVIC_SetPriority(ADC0_IRQn,2);
+	  NVIC_SetPriority(ADC0_IRQn,1);
+	  NVIC_SetPriority(SysTick_IRQn,1);
 	  NVIC_EnableIRQ(ADC0_IRQn);
 
 	  Buttons_Debounce_Init();
@@ -271,7 +280,7 @@ void ADC0_IRQHandler(void){
 	    //PTC0 -ADC channel 8
 		//PTC1 -ADC channel 9
 		//PTC17 -ADC channel 15
-		//PTC15 -ADC channel 12
+		//PTC15 -ADC channel 13
 
 		 if((IP_ADC0->SC1[0] & ADC_SC1_COCO_MASK) == 0){
 		        return;   //conversion not actually done

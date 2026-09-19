@@ -180,8 +180,8 @@ const Clock_Ip_ClockConfigType Clock_Ip_aClockConfig[1U] = {
             #if CLOCK_IP_XOSCS_NO > 0U
             {
                 SOSC_CLK,              /* Clock name associated to xosc */
-                8000000U,              /* External oscillator frequency */ 
-                1U,                     /* Enable xosc */
+                0U,              /* External oscillator frequency */ 
+                0U,                     /* Disable xosc */
                 0U,                   /* Startup stabilization time */
                 0U,                     /* XOSC bypass option */
                 0U,                   /* Comparator is not enabled */ 
@@ -202,7 +202,7 @@ const Clock_Ip_ClockConfigType Clock_Ip_aClockConfig[1U] = {
             #if CLOCK_IP_PLLS_NO > 0U
             {
                 SPLL_CLK,                /* name */
-                1U,                     /* enable */
+                0U,                     /* enable */
                 SOSC_CLK,           /* inputReference */
                 0U,                     /* Bypass */
                 1U,                      /* predivider */

@@ -15,7 +15,7 @@
 volatile ADC_Readings_t ADC_Data ;
 volatile ADC_Ctrl_t ADC_Ctrl ;
 
-ADC_Channel_t Current_ADC_Channel;
+volatile ADC_Channel_t Current_ADC_Channel;
 
 bool ADC_Init(){
 
@@ -81,8 +81,10 @@ bool ADC_Task(ADC_Channel_t ADC_Channel  ){
 
 	if(ADC_Ctrl.Status==ADC_FREE){
 		Current_ADC_Channel = ADC_Channel;
-		IP_ADC0->SC1[0]=ADC_Channel|ADC_SC1_AIEN_MASK;
 		ADC_Ctrl.Status=ADC_BUSY;
+		__asm("DSB");
+		IP_ADC0->SC1[0]=ADC_Channel|ADC_SC1_AIEN_MASK;
+
 		return true ;
 
 	}

@@ -24,6 +24,7 @@
 #define MAGIC_NO                      (0x0000F0F0U)
 #define FlexRAM_BASE_ADDR             (0x14000000U)
 #define TICK_COUNT_5SEC               5000U
+#define WDOG_INST                     (0U)
 
 
 extern volatile bool CCIF_TIMEOUT_FLAG;
@@ -55,7 +56,7 @@ typedef struct{
 }EEPROM_Data_t;
 
 // _Static_assert((sizeof(EEPROM_Data_t) % 4U) == 0U,"EEPROM_Data_t must be word aligned");
-
+typedef enum { FTFC_OK = 0, FTFC_TIMEOUT, FTFC_ERROR } Ftfc_Status_t;
 
 #define FLEXRAM_EEE ((volatile EEPROM_Data_t*)FlexRAM_BASE_ADDR)
 

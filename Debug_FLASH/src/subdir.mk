@@ -7,6 +7,7 @@ C_SRCS += \
 ../src/ADC.c \
 ../src/Delay.c \
 ../src/EEPROM.c \
+../src/Fault_Handler.c \
 ../src/GPIO.c \
 ../src/HMI.c \
 ../src/LCD.c \
@@ -16,6 +17,7 @@ OBJS += \
 ./src/ADC.o \
 ./src/Delay.o \
 ./src/EEPROM.o \
+./src/Fault_Handler.o \
 ./src/GPIO.o \
 ./src/HMI.o \
 ./src/LCD.o \
@@ -25,6 +27,7 @@ C_DEPS += \
 ./src/ADC.d \
 ./src/Delay.d \
 ./src/EEPROM.d \
+./src/Fault_Handler.d \
 ./src/GPIO.d \
 ./src/HMI.d \
 ./src/LCD.d \

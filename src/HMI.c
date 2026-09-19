@@ -24,7 +24,7 @@
  static uint8_t Prev_Mode=(Mode_t)0xFF;
  static uint8_t Prev_Set_Temp=0xFF;
  static ErrorCode_t Prev_Display_Error_Code = 0xFF;
- static uint8_t Prev_Curr_Temp=0xFF;
+ static int8_t Prev_Curr_Temp=0x7F;
  EEPROM_Data_t First_EEPROM_Data;
  volatile HMI_Event_t Event;
  volatile ErrorCode_t Current_Error;
@@ -111,6 +111,7 @@
  void HPSW_Error_Handler(bool Error_Set_Reset );
  static void ADC_Error_Handler(bool Error_Set_Reset );
  static void OC_Error_Handler(bool Error_Set_Reset );
+
 
 
  typedef enum
@@ -613,6 +614,14 @@ else{
 	 {
 	     return;
 	 }
+	 if(HMI->curr_temp<=16.0f){
+		 Systick_Tick_Count = 0U;
+		 HMI->compressor_state = Compressor_off;
+		 Compressor_Min_On_Time_Tick_Count=0;
+		 Compressor_Min_On_Time_Flag=RESET ;
+		 return ;
+	 }
+
 	 if(HMI->mode==Auto_Mode){
 	 if (HMI->curr_temp >= (HMI->set_temp + 2))
 	    {
@@ -764,7 +773,7 @@ else{
  		LCD_String_XY(1, 0, Display_Buf);
  		Prev_Set_Temp=HMI.set_temp;
  	   }
- 	   if((uint8_t)HMI.curr_temp != Prev_Curr_Temp){
+ 	   if(HMI.curr_temp != Prev_Curr_Temp){
 
  		  snprintf(Display_Buf, sizeof(Display_Buf),
  		           "AIR %-3d ",
@@ -1545,7 +1554,7 @@ static void update_state_ADC_Error(void ){
                          Led_Cntrl(Vent,Vent_off);
 
                      //heater2 off
-                         if(HMI.heater2_state!= Heater_off){
+                     if(HMI.heater2_state!= Heater_off){
 
                          HMI.heater2_state=Heater_off;
                          Relay_Cntrl(Heater2,Heater_off);
@@ -1558,7 +1567,7 @@ static void update_state_ADC_Error(void ){
 						Relay_Cntrl(Heater,Heater_off);
 						Led_Cntrl(Heater,Heater_off);
 									}
-					if((HMI.Active_Errors & ~(1U << ADC_ERROR_INDEX)) == 0U){
+				   if((HMI.Active_Errors & ~(1U << ADC_ERROR_INDEX)) == 0U){
 
 	               if(Systick_Tick_Count_ADC_Error>=TICK_COUNT_7MINS&&HMI.Compressor_Error_State==Compressor_on ){
 	            	   HMI.Compressor_Error_State=Compressor_off;
@@ -1631,17 +1640,16 @@ static void update_state_ADC_Error(void ){
 }
 //LPSW and HPSW error should respect heater and should not turn them off if they were on
 static void update_state_HPSW_Error(void ){
-	if(HMI.Blower_state!=Blower_on){
-					HMI.Blower_state=Blower_on;
-					Relay_Cntrl(Blower,Blower_on);
-					Led_Cntrl(Blower,Blower_on);
+	               if(HMI.Blower_state!=Blower_on){
+					       HMI.Blower_state=Blower_on;
+					       Relay_Cntrl(Blower,Blower_on);
+					       Led_Cntrl(Blower,Blower_on);
    											}
 
 					 //Vent off
-	if(HMI.vent_state!=Vent_off){
-					HMI.vent_state=Vent_off;
-					//Relay_Cntrl(Vent,Vent_off);
-					Led_Cntrl(Vent,Vent_off);
+	               if(HMI.vent_state!=Vent_off){
+					      HMI.vent_state=Vent_off;
+					       Led_Cntrl(Vent,Vent_off);
 				}
 
 

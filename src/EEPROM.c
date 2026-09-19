@@ -5,6 +5,7 @@
  *      Author: Nishant Bhange
  */
 #include"EEPROM.h"
+#include "Wdog_Ip.h"
 EEPROM_Data_t EEPROM;
 static void Wait_CCIF(void);
 static void Wait_EEERDY(void);
@@ -139,6 +140,7 @@ bool EEPROM_Partition(void){
 static void Wait_CCIF(void ){
 	CCIF_TIMEOUT_FLAG=SET;
 	  while(!((IP_FTFC->FSTAT>>FTFC_FSTAT_BIT_CCIF)&(0x01))){
+		   Wdog_Ip_Service(WDOG_INST);
              if(CCIF_TIMEOUT_COUNT>TICK_COUNT_5SEC){
             	 CCIF_TIMEOUT_COUNT=0;
             	 CCIF_TIMEOUT_FLAG=RESET;
@@ -149,9 +151,11 @@ static void Wait_CCIF(void ){
 	CCIF_TIMEOUT_COUNT=0;
 }
 
+
 static void Wait_EEERDY(void){
 
 	while(!((IP_FTFC->FCNFG>>FTFC_FCNFG_BIT_EEERDY )&(0x01))){
+		  Wdog_Ip_Service(WDOG_INST);
 		EEERDY_TIMEOUT_FLAG=SET;
 		if(EEERDY_TIMEOUT_COUNT>TICK_COUNT_5SEC){
 		    EEERDY_TIMEOUT_COUNT=0;

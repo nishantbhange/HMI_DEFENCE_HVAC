@@ -1,6 +1,4 @@
-src/EEPROM.o: ../src/EEPROM.c \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/EEPROM.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/HMI.h \
+src/Fault_Handler.o: ../src/Fault_Handler.c \
  C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144.h \
  C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_ADC.h \
  C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_COMMON.h \
@@ -39,26 +37,7 @@ src/EEPROM.o: ../src/EEPROM.c \
  C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_SMC.h \
  C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_SYSTICK.h \
  C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_TRGMUX.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_WDOG.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/GPIO.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/LCD.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/Delay.h \
- ../RTD/include/Wdog_Ip.h ../RTD/include/Wdog_Ip_Types.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Std_Types.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Platform_Types.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Compiler.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Compiler_Cfg.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/CompilerDefinition.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_Cfg_Defines.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_DeviceRegisters.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_WDOG.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_Cfg.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_PBcfg.h \
- C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_Cfg_Defines.h \
- ../RTD/include/Wdog_Ip_Types.h \
- C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Wdg_MemMap.h
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/EEPROM.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/HMI.h:
+ C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_WDOG.h
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144.h:
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_ADC.h:
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_COMMON.h:
@@ -98,21 +77,3 @@ C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_SYSTICK.h:
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_TRGMUX.h:
 C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_WDOG.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/GPIO.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/LCD.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/include/Delay.h:
-../RTD/include/Wdog_Ip.h:
-../RTD/include/Wdog_Ip_Types.h:
-C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Std_Types.h:
-C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Platform_Types.h:
-C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Compiler.h:
-C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Compiler_Cfg.h:
-C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/CompilerDefinition.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_Cfg_Defines.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_DeviceRegisters.h:
-C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/header/S32K144_WDOG.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_Cfg.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_PBcfg.h:
-C\:/Users/admin/workspaceS32DS.3.6.5/HMI_V1/generate/include/Wdog_Ip_Cfg_Defines.h:
-../RTD/include/Wdog_Ip_Types.h:
-C\:/NXP/S32DS.3.6.5/S32DS/software/PlatformSDK_S32K1_S32M24/RTD/BaseNXP_TS_T40D2M30I0R0/include/Wdg_MemMap.h:

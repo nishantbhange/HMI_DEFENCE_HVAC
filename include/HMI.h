@@ -65,7 +65,7 @@
 
 #define PIN_BLC                         9
 #define Heater_Cut_On_Temp                  16U
-#define Heater_Cut_Off_Temp                 24U
+
 
 #define TICK_COUNT_10SEC                    10000U
 #define TICK_COUNT_20SEC                    20000U

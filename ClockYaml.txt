@@ -52,19 +52,11 @@ outputs:
 - {id: PORTD_CLK.outFreq, value: 48 MHz}
 - {id: PORTE_CLK.outFreq, value: 48 MHz}
 - {id: PREDIV_SYS_CLK.outFreq, value: 48 MHz}
-- {id: RTC0_CLK.outFreq, value: 8 MHz}
-- {id: RTC_CLK.outFreq, value: 8 MHz}
 - {id: RTC_CLKIN.outFreq, value: 32.768 kHz}
 - {id: SCGCLKOUT_CLK.outFreq, value: 48 MHz}
 - {id: SIRCDIV1_CLK.outFreq, value: 8 MHz}
 - {id: SIRCDIV2_CLK.outFreq, value: 8 MHz}
 - {id: SIRCOUT.outFreq, value: 8 MHz}
-- {id: SOSCDIV1_CLK.outFreq, value: 8 MHz}
-- {id: SOSCDIV2_CLK.outFreq, value: 8 MHz}
-- {id: SOSCOUT.outFreq, value: 8 MHz}
-- {id: SPLLDIV1_CLK.outFreq, value: 48 MHz}
-- {id: SPLLDIV2_CLK.outFreq, value: 24 MHz}
-- {id: SPLL_CLK_OUT.outFreq, value: 96 MHz}
 - {id: SYS_CLK.outFreq, value: 48 MHz}
 - {id: TRACE_CLK.outFreq, value: 48 MHz}
 settings:
@@ -81,8 +73,6 @@ settings:
 - {id: 'RUN:DIVSLOW.scale', value: '4', locked: true}
 - {id: SCG_SOSCCFG_OSC_MODE_CFG, value: ModeOscLowPower}
 - {id: SCG_SOSCCFG_RANGE_CFG, value: High}
-- {id: SCG_SOSCCSR_SOSCEN_CFG, value: Enabled}
-- {id: SCG_SPLLCSR_SPLLEN_CFG, value: Enabled}
 - {id: SIRCDIV1.scale, value: '1', locked: true}
 - {id: SIRCDIV2.scale, value: '1', locked: true}
 - {id: SPLLDIV1.scale, value: '2', locked: true}

@@ -48,7 +48,7 @@ typedef struct {
 #define DECREMENT_CURSOR       0x04
 #define INCREMENT_CURSOR       0x06
 #define SHIFT_DISPLAY_RIGHT    0x05
-#define SHIFT_DISPLAY_LEFT    0x07
+#define SHIFT_DISPLAY_LEFT     0x07
 #define DISPLAYON_CURSORBLINK  0x0E
 #define CURSOR_ON_FIRSTLINE    0x80
 #define CURSOR_ON_SECONDLINE   0xC0

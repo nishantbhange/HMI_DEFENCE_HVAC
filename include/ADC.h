@@ -96,7 +96,7 @@ float ADC_Blower_Val;
 
 extern volatile ADC_Readings_t ADC_Data ;
 extern volatile ADC_Ctrl_t ADC_Ctrl ;
-extern ADC_Channel_t Current_ADC_Channel;
+extern volatile ADC_Channel_t Current_ADC_Channel;
 
 extern volatile bool ADC_Init_Timeout_Flag;
 extern volatile uint32_t ADC_Init_Timeout_Count;

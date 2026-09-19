@@ -71,6 +71,7 @@ static void System_Init(void);
 static void Process_Pending_Event(void);
 static void Service_EEPROM(void);
 static void Service_ADC(void);
+static void Outputs_Force_Safe_State(void);
 const char* Start_Msg1="WELCOME :)";
 const char* Start_Msg2="TRANS ACNR";
 
@@ -83,6 +84,7 @@ const char* Error_Msg4="WRITE FAILED";
 int main(void)
 {
     System_Init();
+    Outputs_Force_Safe_State();
     //check if any of lpsw or hpsw is high at start .
 
     uint32_t values=PINS_DRV_ReadPins(IP_PTA);
@@ -140,29 +142,24 @@ int main(void)
 
 static void System_Init(void)
 {
+
+	//  if a regenerated clock config ever re-enables SOSC disable sosc forcefully
+             if ((IP_SCG->SOSCCSR & SCG_SOSCCSR_SOSCEN_MASK) != 0U)
+                 {
+                    IP_SCG->SOSCCSR &= ~SCG_SOSCCSR_SOSCEN_MASK;
+                        }
 	 /* --- 1. Clock, before anything else touches a peripheral --- */
  	    Clock_Ip_Init(Clock_Ip_aClockConfig);
-
+ 	    //SPLL is not used on this board: it can only be sourced from SOSC,
+ 	    // and SOSC is disabled because PTB6/PTB7 (XTAL/EXTAL) carry the
+ 	    // compressor and blower LEDs. Core runs from FIRC at 48 MHz.
  	    Wdog_Ip_Init(WDOG_INST, &Wdog_Ip_Cfg0);
 
-	#if defined (FEATURE_CLOCK_IP_HAS_SPLL_CLK)
-	    uint32_t Pll_Lock_Timeout = PLL_LOCK_TIMEOUT_ITER;   /* pick a generous bounded value */
-	    while (CLOCK_IP_PLL_LOCKED != Clock_Ip_GetPllStatus())
-	    {
-	        if (--Pll_Lock_Timeout == 0U)
-	        {
-	            /* PLL never locked - same class of problem as your other
-	             * *_Timeout_Flag guards. Decide a fallback here (e.g. stay on
-	             * FIRC / flag a fault) rather than hanging forever. */
-	            break;
-	        }
-	    }
-	    Clock_Ip_DistributePll();
-	#endif
+
 
 	    Port_Ci_Port_Ip_Init(NUM_OF_CONFIGURED_PINS_PortContainer_0_BOARD_InitPeripherals,
 	    		g_pin_mux_InitConfigArr_PortContainer_0_BOARD_InitPeripherals);
-
+	    Outputs_Force_Safe_State();
 	    Systick_Init(SYSTICK_1MS_LOAD_VALUE, SysTick_CTRL_CLKSOURCE_PROCESSOR_CLK, SysTick_EXCEPTION_EN);
 
 	    LPIT_Init();
@@ -311,3 +308,16 @@ static void Service_ADC(void)
 }
 
 }
+static void Outputs_Force_Safe_State(void)
+{
+    Relay_Cntrl(Compressor, Compressor_off);
+    Relay_Cntrl(Condenser,  Condenser_off);
+    Relay_Cntrl(Heater,         Heater_off);
+    Relay_Cntrl(Heater2,        Heater_off);
+    Relay_Cntrl(Solenoid_Valve, Solenoid_Valve_off);
+    Relay_Cntrl(Blower,         Blower_off);
+    Led_Cntrl(Compressor, Compressor_off); Led_Cntrl(Condenser, Condenser_off);
+    Led_Cntrl(Heater, Heater_off);     Led_Cntrl(Blower, Blower_off);
+    Led_Cntrl(Vent, Vent_off);
+}
+

@@ -55,7 +55,7 @@ void UsageFault_Handler(void)           __attribute__ ((weak));        /* Usage 
 void DebugMon_Handler(void)             __attribute__ ((weak));          /* Debug Monitor Handler */
 void PendSV_Handler(void)               __attribute__ ((weak));            /* PendSV Handler */
 void SysTick_Handler(void)              __attribute__ ((weak));           /* SysTick Handler */
-void undefined_handler(void);         /* Undefined Handler */
+void undefined_handler(void)            __attribute__ ((weak));         /* Undefined Handler */
 #ifdef MCAL_ENABLE_USER_MODE_SUPPORT
 void SVCHandler_main(uint32 * svc_args);
 void Suspend_Interrupts(void);
