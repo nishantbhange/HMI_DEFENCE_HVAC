@@ -427,22 +427,7 @@ void PORTB_IRQHandler(void){
 		IP_PORTB->ISFR|=(1<<PWR_FLAG);
 	}
 }
-void PORTC_IRQHandler(void){
 
-	//PTC2 -compressor switch
-	//PTC3 -Heater Switch
-
-	uint32_t flags =IP_PORTC->ISFR;
-
-	if((flags>>COMPRESSOR_SW_FLAG)&0x01U){
-		Btn_Note_Edge(BTN_COMPRESSOR_SW);
-		IP_PORTC->ISFR|=(1<<COMPRESSOR_SW_FLAG);
-	}
-	if((flags>>HEATER_SW_FLAG)&0x01U){
-		Btn_Note_Edge(BTN_HEATER_SW);
-		IP_PORTC->ISFR|=(1<<HEATER_SW_FLAG);
-	}
-}
 void PORTD_IRQHandler(void){
 	uint32_t flags =IP_PORTD->ISFR;
 	//PTD7 -Blower Switch
@@ -450,6 +435,25 @@ void PORTD_IRQHandler(void){
 		Btn_Note_Edge(BTN_BLOWER_SW);
 		IP_PORTD->ISFR|=(1<<BLOWER_SW_FLAG);
 	}
+}
+void PORTC_IRQHandler(void)
+{
+	//PTC2 -compressor switch
+	//PTC3 -Heater Switch
+    uint32_t flags = IP_PORTC->ISFR;
+    uint32_t handled = 0U;
+
+    if (flags & (1UL << COMPRESSOR_SW_FLAG)) {
+        Btn_Note_Edge(BTN_COMPRESSOR_SW);
+        handled |= (1UL << COMPRESSOR_SW_FLAG);
+    }
+    if (flags & (1UL << HEATER_SW_FLAG)) {
+        Btn_Note_Edge(BTN_HEATER_SW);
+        handled |= (1UL << HEATER_SW_FLAG);
+    }
+    IP_PORTC->ISFR = handled;
+
+    __asm("DSB");
 }
 
 void PORTE_IRQHandler(void){

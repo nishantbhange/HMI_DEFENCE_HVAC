@@ -42,6 +42,7 @@ static EEPROM_Data_t EEPROM_Prev_Snapshot;
 #define EEPROM_WRITE_QUIET_PERIOD_MS   1000U
 #define Delay_5_SEC                    5000U
 #define Delay_1_SEC                    1000U
+#define Delay_2_SEC                    2000U
 
  volatile bool ADC_Timeout_Flag;
  volatile uint32_t ADC_Timeout_Count;
@@ -280,6 +281,12 @@ static void Service_EEPROM(void)
                 LCD_Clear();
                 LCD_String_XY(0,0,Error_Msg1);
                 LCD_String_XY(1,0,Error_Msg4);
+                DelayMs(Delay_1_SEC);
+                Wdog_Ip_Service(WDOG_INST);
+                DelayMs(Delay_1_SEC);
+                Wdog_Ip_Service(WDOG_INST);
+                DelayMs(Delay_1_SEC);
+                Wdog_Ip_Service(WDOG_INST);
                 EEPROM_Write_Timeout_Flag  = RESET;
                 EEPROM_Write_Timeout_Count = 0;
                 break;
