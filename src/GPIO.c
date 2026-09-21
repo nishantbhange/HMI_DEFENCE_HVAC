@@ -2,6 +2,7 @@
 #include"HMI.h"
 #include"ADC.h"
 #include"NVIC.h"
+#include "Event_Queue.h"
 #include <math.h>
  volatile uint32_t Press_Start_Tick=0;
  volatile bool Long_Press_Flag=RESET ;
@@ -88,8 +89,8 @@ void Buttons_Poll_1ms(void){
             uint8_t level = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_HPSW)&0x01U);
             if(level != Btn_Confirmed_Level[id]){
                 Btn_Confirmed_Level[id] = level;
-                if(!level){ Event=Event_Error;       Current_Error=Error_Event_HPSW; }
-                else     { Event=Event_Error_Clear;  Current_Error=Error_HPSW_Clear; }
+                if(!level){ Event_Post(Event_Error,       Error_Event_HPSW);  }
+                else     { Event_Post(Event_Error_Clear, Error_HPSW_Clear); }
             }
             break;
         }
@@ -98,8 +99,8 @@ void Buttons_Poll_1ms(void){
             uint8_t level = (uint8_t)((PINS_DRV_ReadPins(IP_PTA)>>SW_PIN_LPSW)&0x01U);
             if(level != Btn_Confirmed_Level[id]){
                 Btn_Confirmed_Level[id] = level;
-                if(!level){ Event=Event_Error;       Current_Error=Error_Event_LPSW; }
-                else     { Event=Event_Error_Clear;  Current_Error=Error_LPSW_Clear; }
+                if(!level){ Event_Post(Event_Error,       Error_Event_LPSW);}
+                else     { Event_Post(Event_Error_Clear, Error_LPSW_Clear); }
             }
             break;
         }
@@ -117,7 +118,7 @@ void Buttons_Poll_1ms(void){
                     // so Long_Press_Flag can never get stuck SET again.
                     Long_Press_Flag = RESET;
                     if(Press_Start_Tick!=0 && (Global_Tick_Count-Press_Start_Tick) < LONG_PRESS_MS){
-                        Event = Event_Machine_status;   // genuine short press-release
+                    	Event_Post(Event_Machine_status, Error_None);  // genuine short press-release
                     }
                     // else: it was a long hold - SysTick_Handler's timeout path
                     // already fired Event_Mode while it was still held down.
@@ -134,14 +135,14 @@ void Buttons_Poll_1ms(void){
             if((PINS_DRV_ReadPins(IP_PTB)>>TEMP_INC_FLAG)&0x01U){
                 bool CompSw_Also_Held = (PINS_DRV_ReadPins(IP_PTC)>>COMPRESSOR_SW_FLAG)&0x01U;
                 if(!(CompSw_Also_Held && UI_State==UI_Normal)){
-                    Event = Event_Decrease_Temp;
+                	Event_Post(Event_Decrease_Temp, Error_None);
                 }
             }
             break;
 
         case BTN_TEMP_DEC:
             if((PINS_DRV_ReadPins(IP_PTE)>>TEMP_DEC_FLAG)&0x01U){
-                Event = Event_Increase_Temp;
+            	Event_Post(Event_Increase_Temp, Error_None);
             }
             break;
 
@@ -155,7 +156,7 @@ void Buttons_Poll_1ms(void){
 
         case BTN_HEATER_SW:
             if((PINS_DRV_ReadPins(IP_PTC)>>HEATER_SW_FLAG)&0x01U){
-                Event = Event_User_Heater;
+            	Event_Post(Event_User_Heater, Error_None);
             }
             break;
 
@@ -218,7 +219,7 @@ static volatile float V_at_Rated_curr ;
 
 	  IP_PORTB->PCR[4] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	  IP_PORTB->PCR[4] |= PORT_PCR_IRQC(Either_Edge);
-	  NVIC_SetPriority(PORTB_IRQn, 2);
+	  NVIC_SetPriority(PORTB_IRQn, 3);
 	  NVIC_EnableIRQ(PORTB_IRQn);
 
 
@@ -235,7 +236,7 @@ static volatile float V_at_Rated_curr ;
 
 	 IP_PORTC->PCR[3] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	 IP_PORTC->PCR[3] |=PORT_PCR_IRQC(Rising_Edge);
-	 NVIC_SetPriority(PORTC_IRQn, 2);
+	 NVIC_SetPriority(PORTC_IRQn, 3);
 	 NVIC_EnableIRQ(PORTC_IRQn);
 
 
@@ -254,18 +255,18 @@ static volatile float V_at_Rated_curr ;
 	  //PTD7-blower
 	  IP_PORTD->PCR[7] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	  IP_PORTD->PCR[7] |= PORT_PCR_IRQC(Rising_Edge);
-	  NVIC_SetPriority(PORTD_IRQn, 2);
+	  NVIC_SetPriority(PORTD_IRQn, 3);
 	  NVIC_EnableIRQ(PORTD_IRQn);
 
       //PTE8-temp--
 	  IP_PORTE->PCR[8] &=~(0x0f<<PORT_PCR_IRQC_SHIFT);
 	  IP_PORTE->PCR[8] |= PORT_PCR_IRQC(Rising_Edge);
-	  NVIC_SetPriority(PORTE_IRQn, 2);
+	  NVIC_SetPriority(PORTE_IRQn, 3);
 	  NVIC_EnableIRQ(PORTE_IRQn);
 
 	  // ADC interrupt enable
-	  NVIC_SetPriority(ADC0_IRQn,1);
-	  NVIC_SetPriority(SysTick_IRQn,1);
+	  NVIC_SetPriority(ADC0_IRQn,2);
+	  NVIC_SetPriority(SysTick_IRQn,3);
 	  NVIC_EnableIRQ(ADC0_IRQn);
 
 	  Buttons_Debounce_Init();
@@ -315,24 +316,21 @@ void ADC0_IRQHandler(void){
 
 		            	if( comp_avg<(1.5f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=HMI.OC_Time_Val)
 		            	{
-		            		Event=Event_Error;
-		            		Current_Error=Error_Event_OC;
+		            		Event_Post(Event_Error, Error_Event_OC);
 		            		Compressor_Overcurrent_Time_ms=0;
 		            		Check_Status_Flag=RESET;
 
 		            	}
 		            	else if( comp_avg>=(1.5f*V_at_Rated_curr) && comp_avg<(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_30SEC){
 
-		            		Event=Event_Error;
-		            		Current_Error=Error_Event_OC;
+		            		Event_Post(Event_Error, Error_Event_OC);
 		            		Compressor_Overcurrent_Time_ms=0;
 		            		Check_Status_Flag=RESET;
 
 		            	}
 		            	else if( comp_avg>=(2.0f*V_at_Rated_curr) && Compressor_Overcurrent_Time_ms>=TICK_COUNT_5SEC){
 
-		            		Event=Event_Error;
-		            		Current_Error=Error_Event_OC;
+		            		Event_Post(Event_Error, Error_Event_OC);
 		            		Compressor_Overcurrent_Time_ms=0;
 		            		Check_Status_Flag=RESET;
 
@@ -344,8 +342,7 @@ void ADC0_IRQHandler(void){
 		            	Check_Status_Flag=RESET;
 		            	Compressor_Overcurrent_Time_ms=0;
 	                  if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[OC_ERROR_INDEX]==Error_Event_OC){
-		            	Event = Event_Error_Clear;
-		            	Current_Error = Error_OC_Clear;
+	                	  Event_Post(Event_Error_Clear, Error_OC_Clear);
 		            	}
 
 		            }
@@ -357,28 +354,24 @@ void ADC0_IRQHandler(void){
 		        case ADC_TEMP_SENSOR:
 		            V_Temp = raw_voltage;
 		            if(V_Temp >= VREF-0.001f || V_Temp <= 0.001f ){
-		                Event = Event_Error;
-		                Current_Error = Error_Event_ADC;
+		            	Event_Post(Event_Error, Error_Event_ADC);
 		                break;
 		            }
 		            R_Temp = (V_Temp * Rfixed) / (VREF - V_Temp);
 		            if(R_Temp <= 0){
-		                Event = Event_Error;
-		                Current_Error = Error_Event_ADC;
+		            	Event_Post(Event_Error, Error_Event_ADC);
 		                break;
 		            }
 
 		            Temp_k = (T0 * Beta) / (Beta + T0 * logf(R_Temp / R0) );
 		            if(Temp_k < 233.15f || Temp_k > 423.15f){
-		                Event = Event_Error;
-		                Current_Error = Error_Event_ADC;
+		            	Event_Post(Event_Error, Error_Event_ADC);
 		                break;
 		            }
 		            ADC_Data.Temp_Sensor_Val = Temp_k - 273.15f;
 
 		            if(HMI.error_flag==error_flag_set && HMI.Display_Error_Code[ADC_ERROR_INDEX]==Error_Event_ADC){
-		                Event = Event_Error_Clear;
-		                Current_Error = Error_ADC_Clear;
+		            	 Event_Post(Event_Error_Clear, Error_ADC_Clear);
 		            }
 		            break;
 

@@ -170,6 +170,7 @@ typedef enum {
  	Error_HPSW_Clear,
     Error_ADC_Clear ,
 	Error_OC_Clear ,
+	Error_None
 
  }ErrorCode_t;
  typedef enum {
@@ -222,9 +223,7 @@ typedef enum {
 
 
 
-extern volatile ErrorCode_t Current_Error;
 
-extern volatile HMI_Event_t Event;
 
 extern volatile  HMI_t HMI;
 extern volatile  uint32_t Global_Tick_Count;
@@ -232,17 +231,22 @@ extern volatile bool Check_Status_Flag ;
 
 void Update_Output(volatile HMI_t *HMI);
 void Update_Display(HMI_t HMI);
-void HMI_Process_Event(HMI_Event_t Event );
+
 void HMI_Init(HMI_t *HMI );
 void Relay_Cntrl( Part_t part,bool Enable);
 void Led_Cntrl( Part_t part,bool Enable);
-void Error_Handler( void  );
+
 void Update_Compressor_State(volatile HMI_t *HMI);
 void Update_Heater_State(volatile HMI_t *HMI);
 void LPSW_Error_Handler(bool Error_Set_Reset );
 void HPSW_Error_Handler(bool Error_Set_Reset );
 void Backlight_Cntrl(bool On_Off);
 void Process_Curr_View_Mode(void);
+
+
+void Error_Handler(HMI_Event_t ev, ErrorCode_t code);
+
+void HMI_Process_Event(HMI_Event_t Event, ErrorCode_t Code );
 
 
 //void Check_OverCurrent(void);

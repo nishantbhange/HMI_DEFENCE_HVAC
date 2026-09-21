@@ -56,9 +56,11 @@
 "./src/ADC.o"
 "./src/Delay.o"
 "./src/EEPROM.o"
+"./src/Event_Queue.o"
 "./src/Fault_Handler.o"
 "./src/GPIO.o"
 "./src/HMI.o"
+"./src/IRQ_Control.o"
 "./src/LCD.o"
 "./src/main.o"
 -lc

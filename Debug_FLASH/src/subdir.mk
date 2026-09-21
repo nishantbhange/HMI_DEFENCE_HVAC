@@ -7,9 +7,11 @@ C_SRCS += \
 ../src/ADC.c \
 ../src/Delay.c \
 ../src/EEPROM.c \
+../src/Event_Queue.c \
 ../src/Fault_Handler.c \
 ../src/GPIO.c \
 ../src/HMI.c \
+../src/IRQ_Control.c \
 ../src/LCD.c \
 ../src/main.c 
 
@@ -17,9 +19,11 @@ OBJS += \
 ./src/ADC.o \
 ./src/Delay.o \
 ./src/EEPROM.o \
+./src/Event_Queue.o \
 ./src/Fault_Handler.o \
 ./src/GPIO.o \
 ./src/HMI.o \
+./src/IRQ_Control.o \
 ./src/LCD.o \
 ./src/main.o 
 
@@ -27,9 +31,11 @@ C_DEPS += \
 ./src/ADC.d \
 ./src/Delay.d \
 ./src/EEPROM.d \
+./src/Event_Queue.d \
 ./src/Fault_Handler.d \
 ./src/GPIO.d \
 ./src/HMI.d \
+./src/IRQ_Control.d \
 ./src/LCD.d \
 ./src/main.d 
 

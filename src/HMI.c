@@ -10,6 +10,7 @@
 #include<ADC.h>
 #include<string.h>
 #include"GPIO.h"
+#include"Event_Queue.h"
  volatile HMI_t HMI;
  volatile uint32_t Global_Tick_Count =0 ;
   static volatile uint32_t Systick_Tick_Count=0;
@@ -26,8 +27,7 @@
  static ErrorCode_t Prev_Display_Error_Code = 0xFF;
  static int8_t Prev_Curr_Temp=0x7F;
  EEPROM_Data_t First_EEPROM_Data;
- volatile HMI_Event_t Event;
- volatile ErrorCode_t Current_Error;
+
  static Compressor_t Prev_Compressor_State;
  int comp_ct_val=0;
  volatile bool Check_Status_Flag =RESET;
@@ -125,7 +125,7 @@
 
 
 
- void HMI_Process_Event(HMI_Event_t CurrEvent ){
+ void HMI_Process_Event(HMI_Event_t CurrEvent, ErrorCode_t CurrCode ){
 	 if(CurrEvent==Event_NONE){
 		 return ;
 	 }
@@ -263,7 +263,7 @@
 		                   HMI.error_flag=error_flag_set;
 
 		                   EEPROM.Error_Present=HMI.error_flag;
-		                   EEPROM.ErrorCode=Current_Error;
+		                   EEPROM.ErrorCode=CurrCode;
 		                   EEPROM.Active_Errors=HMI.Active_Errors;
 		                   for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
 		                	   EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
@@ -282,7 +282,7 @@
 		                  if(HMI.Active_Errors==0){
 		                  HMI.error_flag=error_flag_reset;
 		                  Prev_Display_Error_Code = 0xFF;
-		                  EEPROM.ErrorCode=-1;
+		                  EEPROM.ErrorCode=Error_None;
 		                  Systick_Tick_Count=0U;
 		                  }
 	                      EEPROM.Error_Present=HMI.error_flag;
@@ -1135,7 +1135,7 @@ void SysTick_Handler(void){
 			           //the live pin here costs nothing and means this line can never
 			           //fire a mode toggle unless PWR is still physically held down.
 			           if((PINS_DRV_ReadPins(IP_PTB)>>SW_PIN_PWR)&0x01U){
-			               Event=Event_Mode;
+			        	   Event_Post(Event_Mode, Error_None);
 			           }
 			           Long_Press_Flag=RESET;
 
@@ -1155,7 +1155,7 @@ void SysTick_Handler(void){
 	        else if(!Preset_Combo_Fired &&
 	                (Global_Tick_Count - Preset_Combo_Start_Tick) >= PRESET_ENTRY_HOLD_MS){
 	            Preset_Combo_Fired = true;
-	            Event = Event_Enter_Preset_Mode;
+	            Event_Post(Event_Enter_Preset_Mode, Error_None);
 	        }
 	        /* combo is taking this press - don't also let the lone-key
 	         * tap/hold tracking below fire a toggle or a current view */
@@ -1182,12 +1182,12 @@ void SysTick_Handler(void){
 	                    (Global_Tick_Count - CompKey_Press_Tick) >= CURR_VIEW_HOLD_MS){
 	                CompKey_Hold_Fired = true;
 	                Curr_View_Source   = CURR_VIEW_COMPRESSOR;
-	                Event = Event_Show_Current;
+	                Event_Post(Event_Show_Current, Error_None);
 	            }
 	        }
 	        else{
 	            if(CompKey_Press_Active && !CompKey_Hold_Fired && !OK_Key_Locked){
-	                Event = Event_User_Compressor;   // genuine short tap-release
+	            	Event_Post(Event_User_Compressor, Error_None);  // genuine short tap-release
 	            }
 	            CompKey_Press_Active = false;
 	        }
@@ -1204,12 +1204,12 @@ void SysTick_Handler(void){
 	                    (Global_Tick_Count - BlowerKey_Press_Tick) >= CURR_VIEW_HOLD_MS){
 	                BlowerKey_Hold_Fired = true;
 	                Curr_View_Source     = CURR_VIEW_BLOWER;
-	                Event = Event_Show_Current;
+	                Event_Post(Event_Show_Current, Error_None);
 	            }
 	        }
 	        else{
 	            if(BlowerKey_Press_Active && !BlowerKey_Hold_Fired){
-	                Event = Event_Blower;   // genuine short tap-release
+	            	Event_Post(Event_Blower, Error_None);  // genuine short tap-release
 	            }
 	            BlowerKey_Press_Active = false;
 	        }
@@ -1228,7 +1228,7 @@ void SysTick_Handler(void){
 	        CurrView_Src_Was_Released = true;        /* armed: key has been let go since opening */
 	    }
 	    else if(CurrView_Src_Was_Released){
-	        Event = Event_Exit_Current_View;         /* fresh press after release -> close now */
+	    	Event_Post(Event_Exit_Current_View, Error_None);         /* fresh press after release -> close now */
 	        CurrView_Src_Was_Released = false;       /* consume so it can't re-fire every tick */
 	    }
 	}
@@ -1244,60 +1244,34 @@ void SysTick_Handler(void){
 	        PresetEdit_CompKey_Was_Released = true;
 	    }
 	    else if(PresetEdit_CompKey_Was_Released){
-	        Event = Event_User_Compressor;           /* OK - confirm/advance/save */
+	    	Event_Post(Event_User_Compressor, Error_None);          /* OK - confirm/advance/save */
 	        PresetEdit_CompKey_Was_Released = false;
 	    }
 	}
 
 }
 
-void Error_Handler( void  ){
-if(Event==Event_Error){
-	switch(Current_Error){
-
-	case Error_Event_LPSW:
-		LPSW_Error_Handler(Error_Set);
-		break ;
-	case Error_Event_HPSW:
-		HPSW_Error_Handler(Error_Set);
-		break ;
-	case Error_Event_ADC :
-		ADC_Error_Handler(Error_Set);
-       break ;
-	case Error_Event_OC :
-		OC_Error_Handler(Error_Set);
-	       break ;
-
-      default:
-
-    	  break ;
+void Error_Handler(HMI_Event_t ev, ErrorCode_t code){
+if(ev==Event_Error){
+	switch(code){
+	case Error_Event_LPSW: LPSW_Error_Handler(Error_Set); break;
+	case Error_Event_HPSW: HPSW_Error_Handler(Error_Set); break;
+	case Error_Event_ADC :  ADC_Error_Handler(Error_Set); break;
+	case Error_Event_OC :   OC_Error_Handler(Error_Set);  break;
+	default: break;
 	}
-
 }
-else if(Event==Event_Error_Clear){
-	switch(Current_Error){
-
-	case Error_LPSW_Clear:
-		LPSW_Error_Handler(Error_Reset);
-		break ;
-	case Error_HPSW_Clear:
-		HPSW_Error_Handler(Error_Reset);
-		break ;
-	case Error_ADC_Clear :
-		ADC_Error_Handler(Error_Reset);
-		break ;
-	case Error_OC_Clear :
-		OC_Error_Handler(Error_Reset);
-		break ;
-
-	 default:
-	    break ;
-
+else if(ev==Event_Error_Clear){
+	switch(code){
+	case Error_LPSW_Clear: LPSW_Error_Handler(Error_Reset); break;
+	case Error_HPSW_Clear: HPSW_Error_Handler(Error_Reset); break;
+	case Error_ADC_Clear :  ADC_Error_Handler(Error_Reset); break;
+	case Error_OC_Clear :   OC_Error_Handler(Error_Reset);  break;
+	default: break;
 	}
-
+}
 }
 
-}
 void LPSW_Error_Handler(bool Error_Set_Reset ){
 if(Error_Set_Reset==Error_Set){
 	Prev_Compressor_State=HMI.compressor_state;

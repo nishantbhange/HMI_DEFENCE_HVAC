@@ -31,6 +31,7 @@
 #include "EEPROM.h"
 #include "Delay.h"
 #include "Wdog_Ip.h"
+#include "Event_Queue.h"
 
 #define WDOG_INST                    (0U)
 
@@ -69,7 +70,7 @@ static bool EEPROM_Dirty        = false;
 static uint32_t EEPROM_Dirty_Since  = 0U;
 
 static void System_Init(void);
-static void Process_Pending_Event(void);
+static void Process_Pending_Events(void);
 static void Service_EEPROM(void);
 static void Service_ADC(void);
 static void Outputs_Force_Safe_State(void);
@@ -117,7 +118,7 @@ int main(void)
     {
 
 
-      Process_Pending_Event();
+    	Process_Pending_Events();
         HMI.curr_temp = ADC_Data.Temp_Sensor_Val;
         if(HMI.error_flag!=error_flag_set){
         Update_Compressor_State((volatile HMI_t *)&HMI);
@@ -225,33 +226,36 @@ static void System_Init(void)
 
 
 
-    Event = Event_NONE;
+
 
 
 
 
 }
 
-static void Process_Pending_Event(void)
+
+static void Process_Pending_Events(void)
 {
-    if(Event == Event_NONE)
-    {
-        return;
-    }
+    HMI_EventMsg_t msg;
+    uint32_t drained = 0U;
 
-    if(Event==Event_Error || Event==Event_Error_Clear)
+    /* Drain everything waiting, not just one message. A single super-loop
+     * pass can have several events queued (e.g. a button edge and an ADC
+     * fault inside the same 1-2 ms), and dropping back to one-per-pass
+     * would recreate a milder version of the original bug. EVQ_CAPACITY
+     * is a hard upper bound so this can never run away even if the queue
+     * is pathologically full. */
+    while ((drained < EVQ_CAPACITY) && Event_Get(&msg))
     {
-        Error_Handler();
-        HMI_Process_Event(Event);
-    }
-    else
-    {
-        HMI_Process_Event(Event);
-    }
+        drained++;
 
-    Event = Event_NONE;
+        if (msg.ev == Event_Error || msg.ev == Event_Error_Clear)
+        {
+            Error_Handler(msg.ev, msg.code);
+        }
+        HMI_Process_Event(msg.ev, msg.code);
+    }
 }
-
 
 static void Service_EEPROM(void)
 {
@@ -310,8 +314,7 @@ static void Service_ADC(void)
 	ADC_Ctrl.Status = ADC_FREE;
 	ADC_Bsy_Timeout_Flag=RESET;
 	ADC_Bsy_Timeout_Count=0;
-	Event = Event_Error;
-    Current_Error=Error_Event_ADC;
+	Event_Post(Event_Error, Error_Event_ADC);
 }
 
 }
