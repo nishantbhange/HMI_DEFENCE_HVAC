@@ -16,6 +16,13 @@ volatile bool EEERDY_TIMEOUT_FLAG;
 volatile uint32_t CCIF_TIMEOUT_COUNT;
 volatile uint32_t EEERDY_TIMEOUT_COUNT;
 
+
+static const char* Error_Msg1="WARNING EEPROM";
+static const char* Error_Msg3="INIT FAILED";
+
+
+
+
 bool EEPROM_Read( EEPROM_Data_t *Data){
 	if(Data==NULL){
 		return false;
@@ -142,6 +149,11 @@ static void Wait_CCIF(void ){
 	  while(!((IP_FTFC->FSTAT>>FTFC_FSTAT_BIT_CCIF)&(0x01))){
 		   Wdog_Ip_Service(WDOG_INST);
              if(CCIF_TIMEOUT_COUNT>TICK_COUNT_5SEC){
+    	    	 LCD_Clear();
+    	    	 LCD_String_XY(0,0,Error_Msg1);
+    	    	 LCD_String_XY(1,0,Error_Msg3);
+    	    	 DelayMs(Delay_1_SEC);
+    	    	 Wdog_Ip_Service(WDOG_INST);
             	 CCIF_TIMEOUT_COUNT=0;
             	 CCIF_TIMEOUT_FLAG=RESET;
             	break ;
@@ -158,7 +170,12 @@ static void Wait_EEERDY(void){
 		  Wdog_Ip_Service(WDOG_INST);
 		EEERDY_TIMEOUT_FLAG=SET;
 		if(EEERDY_TIMEOUT_COUNT>TICK_COUNT_5SEC){
-		    EEERDY_TIMEOUT_COUNT=0;
+	    	 LCD_Clear();
+	    	 LCD_String_XY(0,0,Error_Msg1);
+	    	 LCD_String_XY(1,0,Error_Msg3);
+	    	 DelayMs(Delay_1_SEC);
+	    	 Wdog_Ip_Service(WDOG_INST);
+            EEERDY_TIMEOUT_COUNT=0;
 			EEERDY_TIMEOUT_FLAG=RESET;
 		        break ;
 		             }

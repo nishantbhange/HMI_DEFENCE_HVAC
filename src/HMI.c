@@ -1816,8 +1816,17 @@ static void Handle_Preset_Edit_Event(HMI_Event_t CurrEvent){
 
     switch(CurrEvent){
         case Event_Increase_Temp:                          /* UP */
-            if(Preset_Edit_Param==0U) Edit_Max_Current  += MAX_CURRENT_STEP;
-            else                      Edit_Wait_Time_Ms += WAIT_TIME_STEP_MS;
+            if(Preset_Edit_Param==0U){
+            	if(Edit_Max_Current<UPPER_CURRENT_BOUND)  Edit_Max_Current  += MAX_CURRENT_STEP;
+
+            	else                                       Edit_Max_Current=UPPER_CURRENT_BOUND;
+            }
+            else   {
+            	if(Edit_Wait_Time_Ms<UPPER_TIME_BOUND)    Edit_Wait_Time_Ms += WAIT_TIME_STEP_MS;
+
+            	else                                       Edit_Wait_Time_Ms=UPPER_TIME_BOUND;
+
+            }
             break;
         case Event_Decrease_Temp:                           /* DOWN */
             if(Preset_Edit_Param==0U){

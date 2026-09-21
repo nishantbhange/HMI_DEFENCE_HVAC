@@ -79,6 +79,9 @@ extern volatile UI_State_t UI_State;
 #define PRESET_ENTRY_HOLD_MS   5000U   /* hold TEMP+ & COMP together 20 secs to enter */
 #define PRESET_EDIT_IDLE_MS     20000U   /* auto-exit after 20s of no key activity    */
 
+#define UPPER_CURRENT_BOUND       20.0f
+#define UPPER_TIME_BOUND          120000U
+
 #define MAX_CURRENT_STEP          0.5f
 #define WAIT_TIME_STEP_MS         5000U
 #define OC_PRESET_PARAM_COUNT     2U
