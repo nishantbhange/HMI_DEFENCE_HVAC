@@ -169,8 +169,8 @@
 
 	    						}
 
-	                            EEPROM.AC_State=HMI.status;
-	                            EEPROM.Curr_Mode=HMI.mode;
+	    	                    EEPROM.ac_state  = (uint8_t)HMI.status;
+	    	                   	EEPROM.curr_mode = (uint8_t)HMI.mode;
 	                        break;
 
 	     case Event_Mode :
@@ -188,8 +188,8 @@
 	    		                           Manual_Mode_Count=0;
 	    	                                               }
 	    	                            Systick_Tick_Count_Stagger=0;
-	    	                            EEPROM.Curr_Mode=HMI.mode;
-	    	                            (void)EEPROM_Write((const EEPROM_Data_t *)&EEPROM);
+	    	                            EEPROM.curr_mode = (uint8_t)HMI.mode;
+	    	                           	(void)EEPROM_Write(&EEPROM);
 	    	                            Compressor_Min_On_Time_Tick_Count=0;
 	    	                            Compressor_Min_On_Time_Flag=RESET ;
 	    	                        break;
@@ -202,7 +202,7 @@
 		                    else{
 	 	                        HMI.set_temp++;
 	 	                        }
-		                    EEPROM.Set_Temp=HMI.set_temp;
+		                    EEPROM.set_temp_x10 = Temp_To_Fixed(HMI.set_temp);
 	 	                    break;
 
 	   case Event_Decrease_Temp :
@@ -212,7 +212,7 @@
 		  		            else{
 		  	 	                HMI.set_temp--;
 		  	 	                }
-		                    EEPROM.Set_Temp=HMI.set_temp;
+		                    EEPROM.set_temp_x10 = Temp_To_Fixed(HMI.set_temp);
 	 	 	                break;
 
 	   case Event_Blower :
@@ -237,7 +237,7 @@
 		 	 		        HMI.user_Heater_state=Heater_on;
 		 	 		        HMI.user_compressor_state=Compressor_off;
 		 	 	                                     }
-		 	 	            EEPROM.heater_state=HMI.heater_state;
+		 	 	          EEPROM.heater_state = (uint8_t)HMI.heater_state;
 		 	 	 	        break;
 
 	 case Event_User_Compressor :
@@ -253,7 +253,7 @@
 			 	 		    Systick_Tick_Count_Stagger=0U;
 			 	 		    }
 			 	 	                                  }
-			 	 	        EEPROM.User_Compressor_state=HMI.user_compressor_state;
+			 	 	      EEPROM.user_compressor_state = (uint8_t)HMI.user_compressor_state;
 
 			 	 	        break;
 	 case Event_Error :
@@ -262,19 +262,19 @@
 		                   //push error flags into EEprom too
 		                   HMI.error_flag=error_flag_set;
 
-		                   EEPROM.Error_Present=HMI.error_flag;
-		                   EEPROM.ErrorCode=CurrCode;
-		                   EEPROM.Active_Errors=HMI.Active_Errors;
-		                   for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
-		                	   EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
-		                   }
+		                   EEPROM.error_present = (uint8_t)HMI.error_flag;
+		                  		                   EEPROM.error_code    = (uint8_t)CurrCode;
+		                  		                   EEPROM.active_errors = HMI.Active_Errors;
+		                  		                   for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
+		                  		                   EEPROM.display_error[i] = (uint8_t)HMI.Display_Error_Code[i];
+		                  		                   }
 		                   if(HMI.mode!=Auto_Mode ){
 		                	                    	  HMI.mode=Auto_Mode;
 		                	                    	  HMI.compressor_state=Compressor_off;
 		                	                    	  Manual_Mode_Flag=RESET;
 		                	                    	  Manual_Mode_Count=0;
 		                	                    	  Systick_Tick_Count_Stagger=0;
-		                	                    	  EEPROM.Curr_Mode=HMI.mode;
+		                	                    	  EEPROM.curr_mode = (uint8_t)HMI.mode;
 		                	                      }
 
 			 	 	 	    break;
@@ -282,14 +282,14 @@
 		                  if(HMI.Active_Errors==0){
 		                  HMI.error_flag=error_flag_reset;
 		                  Prev_Display_Error_Code = 0xFF;
-		                  EEPROM.ErrorCode=Error_None;
+		                  EEPROM.error_code = (uint8_t)Error_None;
 		                  Systick_Tick_Count=0U;
 		                  }
-	                      EEPROM.Error_Present=HMI.error_flag;
+		                  EEPROM.error_present = (uint8_t)HMI.error_flag;
 
-	                      EEPROM.Active_Errors=HMI.Active_Errors;
+		                  EEPROM.active_errors = HMI.Active_Errors;
 	                      for(uint8_t i=0 ; i< ERORR_COUNT ;i++){
-	                     		EEPROM.Display_Error_Code[i]=HMI.Display_Error_Code[i];
+	                    	  EEPROM.display_error[i] = (uint8_t)HMI.Display_Error_Code[i];
 	                     		                   }
 	                      Compressor_Min_On_Time_Tick_Count=0;
 	                      Compressor_Min_On_Time_Flag=RESET ;
@@ -812,9 +812,8 @@ else{
  }
  void HMI_Init(HMI_t *HMI ){
 	Backlight_Cntrl(ON);
-	 // pull whatever is currently in FlexRAM
-	EEPROM_Read(&First_EEPROM_Data);
-	if(!EEPROM_Is_Valid(&First_EEPROM_Data)){
+
+	if(!EEPROM_Read(&First_EEPROM_Data)){
      // first-ever boot  - set defaults
 
     HMI->set_temp=25.00f;
@@ -836,42 +835,41 @@ else{
 
     // push defaults into the RAM shadow
 
-    EEPROM.Set_Temp = HMI->set_temp;
-    EEPROM.AC_State = HMI->status;
-    EEPROM.Curr_Mode = HMI->mode;
-    EEPROM.Condenser_state = HMI->condenser_state;
-    EEPROM.User_Compressor_state = HMI->user_compressor_state;
-    EEPROM.Curr_Temp = HMI->curr_temp;
-    EEPROM.heater_state = HMI->heater_state;
-    EEPROM.vent_state = HMI->vent_state;
-    EEPROM.Error_Present = HMI->error_flag;
-    EEPROM.Active_Errors = HMI->Active_Errors;
-    EEPROM.OC_Current_Val=HMI->OC_Current_Val;
-    EEPROM.OC_Time_Val=HMI->OC_Time_Val;
-    EEPROM.Magic_No = MAGIC_NO;
+    EEPROM.set_temp_x10          = Temp_To_Fixed(HMI->set_temp);
+    EEPROM.ac_state               = (uint8_t)HMI->status;
+    EEPROM.curr_mode              = (uint8_t)HMI->mode;
+    EEPROM.condenser_state        = (uint8_t)HMI->condenser_state;
+    EEPROM.user_compressor_state  = (uint8_t)HMI->user_compressor_state;
+    EEPROM.curr_temp_x10          = Temp_To_Fixed(HMI->curr_temp);
+    EEPROM.heater_state           = (uint8_t)HMI->heater_state;
+    EEPROM.vent_state             = (uint8_t)HMI->vent_state;
+    EEPROM.error_present          = (uint8_t)HMI->error_flag;
+    EEPROM.active_errors          = HMI->Active_Errors;
+    EEPROM.oc_current_x100        = Amps_To_Fixed(HMI->OC_Current_Val);
+    EEPROM.oc_time_ms             = Millis_To_Fixed(HMI->OC_Time_Val);
     EEPROM_Write(&EEPROM);
     }
 	else{
 	//these variables must be restored from eeprom !!
 
-    HMI->set_temp=First_EEPROM_Data.Set_Temp;
-	HMI->status=AC_on;
-	HMI->mode=First_EEPROM_Data.Curr_Mode;
-    HMI->condenser_state=First_EEPROM_Data.Condenser_state;
-    HMI->user_compressor_state=Compressor_off ;
-	HMI->curr_temp=First_EEPROM_Data.Curr_Temp;
-    HMI->heater_state=Heater_off;
-    HMI->vent_state=First_EEPROM_Data.vent_state;
-    HMI->error_flag=First_EEPROM_Data.Error_Present;
-    HMI->Blower_state=Blower_on;
-    HMI->Compressor_Error_State=Compressor_off;
-    HMI->user_Heater_state=Heater_off;
-    HMI->Active_Errors=First_EEPROM_Data.Active_Errors;
-    HMI->OC_Current_Val=First_EEPROM_Data.OC_Current_Val;
-    HMI->OC_Time_Val=First_EEPROM_Data.OC_Time_Val;
-    for(uint8_t i=0;i<ERORR_COUNT;i++){
-    	HMI->Display_Error_Code[i]=First_EEPROM_Data.Display_Error_Code[i];
-    }
+	    HMI->set_temp=Fixed_To_Temp(First_EEPROM_Data.set_temp_x10);
+		HMI->status=AC_on;
+		HMI->mode=(Mode_t)First_EEPROM_Data.curr_mode;
+	    HMI->condenser_state=(Condenser_t)First_EEPROM_Data.condenser_state;
+	    HMI->user_compressor_state=Compressor_off ;
+		HMI->curr_temp=Fixed_To_Temp(First_EEPROM_Data.curr_temp_x10);
+	    HMI->heater_state=Heater_off;
+	    HMI->vent_state=(Vent_t)First_EEPROM_Data.vent_state;
+	    HMI->error_flag=(error_flag_t)First_EEPROM_Data.error_present;
+	    HMI->Blower_state=Blower_on;
+	    HMI->Compressor_Error_State=Compressor_off;
+	    HMI->user_Heater_state=Heater_off;
+	    HMI->Active_Errors=First_EEPROM_Data.active_errors;
+	    HMI->OC_Current_Val=Fixed_To_Amps(First_EEPROM_Data.oc_current_x100);
+	    HMI->OC_Time_Val=Fixed_To_Millis(First_EEPROM_Data.oc_time_ms);
+	    for(uint8_t i=0;i<ERORR_COUNT;i++){
+	    HMI->Display_Error_Code[i]=(ErrorCode_t)First_EEPROM_Data.display_error[i];
+	    }
     HMI->compressor_state=Compressor_off;
     HMI->heater2_state=Heater_off;
 
@@ -1861,14 +1859,14 @@ static void Exit_Preset_Edit_Mode(bool Save){
     if(Save){
         HMI.OC_Current_Val     = Edit_Max_Current;
         HMI.OC_Time_Val        = Edit_Wait_Time_Ms;
-        EEPROM.OC_Current_Val  = HMI.OC_Current_Val;
-        EEPROM.OC_Time_Val     = HMI.OC_Time_Val;
-        (void)EEPROM_Write((const EEPROM_Data_t *)&EEPROM);   // one-time factory value -> commit now
+        EEPROM.oc_current_x100 = Amps_To_Fixed(HMI.OC_Current_Val);
+        EEPROM.oc_time_ms      = Millis_To_Fixed(HMI.OC_Time_Val);
+        (void)EEPROM_Write(&EEPROM);   // one-time factory value -> commit now
     }
     UI_State = UI_Normal;
 
     HMI.status      = AC_on;
-    EEPROM.AC_State = HMI.status;
+    EEPROM.ac_state = (uint8_t)HMI.status;
     Backlight_Cntrl(ON);
     Prev_Display_State=-1;
     LCD_Clear();
