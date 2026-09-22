@@ -295,6 +295,7 @@
 	                      Compressor_Min_On_Time_Flag=RESET ;
 
 
+
 		                    break;
 	 default:
 		                    break ;
@@ -1287,13 +1288,14 @@ else if(Error_Set_Reset==Error_Reset){
 
      if(Prev_Compressor_State==Compressor_on){
 		HMI.compressor_state=Compressor_wait_to_on;
+		 Systick_Tick_Count = 0U;
 	}
 	else{
 		HMI.compressor_state=Prev_Compressor_State;
 	}
 	}
 }
-//Update_Display(HMI);
+
 
 }
 void HPSW_Error_Handler(bool Error_Set_Reset){
@@ -1312,13 +1314,14 @@ else if(Error_Set_Reset==Error_Reset){
 	HMI.error_flag = error_flag_reset;
 	if(Prev_Compressor_State==Compressor_on){
 	HMI.compressor_state=Compressor_wait_to_on;
+	 Systick_Tick_Count = 0U;
 	}
 	else{
 	HMI.compressor_state=Prev_Compressor_State;
 	}
 	}
 }
-//Update_Display(HMI);
+
 }
 
 
@@ -1352,13 +1355,14 @@ void ADC_Error_Handler(bool Error_Set_Reset ){
 
 			if(Prev_Compressor_State==Compressor_on){
 			HMI.compressor_state=Compressor_wait_to_on;
+			 Systick_Tick_Count = 0U;
 			}
 			else{
 			HMI.compressor_state=Prev_Compressor_State;
 			}
 	}
 	}
-	//Update_Display(HMI);
+
 
 }
 

@@ -4644,43 +4644,43 @@ END GROUP
                 0x0000158c                PORTD_IRQHandler
                 0x000015bc                PORTC_IRQHandler
                 0x00001604                PORTE_IRQHandler
- .text          0x00001634     0x1890 ./src/HMI.o
-                0x00001960                Update_Output
-                0x00001f40                Update_Compressor_State
-                0x00001ff0                Update_Heater_State
-                0x00002080                Update_Display
-                0x0000238c                HMI_Init
-                0x000024c4                Relay_Cntrl
-                0x0000253c                Led_Cntrl
-                0x000025a4                SysTick_Handler
-                0x00002950                LPSW_Error_Handler
-                0x00002984                HPSW_Error_Handler
-                0x000029b4                Error_Handler
-                0x00002abc                Backlight_Cntrl
-                0x00002ad0                HMI_Process_Event
-                0x00002e34                Process_Preset_Edit_Mode
-                0x00002e7c                Process_Curr_View_Mode
- .text          0x00002ec4        0xe ./src/IRQ_Control.o
-                0x00002ec4                Get_PRIMASK
-                0x00002eca                Disable_IRQ
-                0x00002ece                Enable_IRQ
- *fill*         0x00002ed2        0x2 
- .text          0x00002ed4      0x1ac ./src/LCD.o
-                0x00002f44                LCD_Command
-                0x00002f7c                LCD_Init
-                0x00003000                LCD_Clear
-                0x00003012                LCD_Char
-                0x0000304c                LCD_String
-                0x0000305e                LCD_String_XY
- .text          0x00003080       0xb4 ./src/main.o
- .text          0x00003134        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memcmp.o)
- .text          0x00003134        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memcpy-stub.o)
- .text          0x00003134        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memset.o)
- .text          0x00003134        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-snprintf.o)
- .text          0x00003134        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-impure.o)
- .text          0x00003134        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-svfprintf.o)
- .text          0x00003134        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-vfprintf_i.o)
- *fill*         0x00003134        0xc 
+ .text          0x00001634     0x1894 ./src/HMI.o
+                0x00001970                Update_Output
+                0x00001f50                Update_Compressor_State
+                0x00001ff8                Update_Heater_State
+                0x00002088                Update_Display
+                0x00002394                HMI_Init
+                0x000024cc                Relay_Cntrl
+                0x00002544                Led_Cntrl
+                0x000025ac                SysTick_Handler
+                0x00002954                LPSW_Error_Handler
+                0x00002988                HPSW_Error_Handler
+                0x000029b8                Error_Handler
+                0x00002ac4                Backlight_Cntrl
+                0x00002ad8                HMI_Process_Event
+                0x00002e38                Process_Preset_Edit_Mode
+                0x00002e80                Process_Curr_View_Mode
+ .text          0x00002ec8        0xe ./src/IRQ_Control.o
+                0x00002ec8                Get_PRIMASK
+                0x00002ece                Disable_IRQ
+                0x00002ed2                Enable_IRQ
+ *fill*         0x00002ed6        0x2 
+ .text          0x00002ed8      0x1ac ./src/LCD.o
+                0x00002f48                LCD_Command
+                0x00002f80                LCD_Init
+                0x00003004                LCD_Clear
+                0x00003016                LCD_Char
+                0x00003050                LCD_String
+                0x00003062                LCD_String_XY
+ .text          0x00003084       0xb4 ./src/main.o
+ .text          0x00003138        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memcmp.o)
+ .text          0x00003138        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memcpy-stub.o)
+ .text          0x00003138        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memset.o)
+ .text          0x00003138        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-snprintf.o)
+ .text          0x00003138        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-impure.o)
+ .text          0x00003138        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-svfprintf.o)
+ .text          0x00003138        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-nano-vfprintf_i.o)
+ *fill*         0x00003138        0x8 
  .text          0x00003140       0xa0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memchr.o)
                 0x00003140                memchr
  .text          0x000031e0        0x0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(lib_a-memmove.o)
@@ -5378,10 +5378,10 @@ END GROUP
  .bss           0x1fff972c       0xe0 ./src/HMI.o
                 0x1fff972c                UI_State
                 0x1fff9740                HMI
-                0x1fff97a0                Manual_Mode_Count
-                0x1fff97a4                Manual_Mode_Flag
-                0x1fff97a8                Compressor_Overcurrent_Time_ms
-                0x1fff97ad                Check_Status_Flag
+                0x1fff97a4                Manual_Mode_Count
+                0x1fff97a8                Manual_Mode_Flag
+                0x1fff97ac                Compressor_Overcurrent_Time_ms
+                0x1fff97b1                Check_Status_Flag
                 0x1fff97c0                Global_Tick_Count
                 0x1fff97c8                First_EEPROM_Data
                 0x1fff9808                comp_ct_val
@@ -5784,7 +5784,7 @@ LOAD linker stubs
  .comment       0x00000088       0x89 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(lib_a-errno.o)
  .comment       0x00000088       0x89 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libnosys.a(sbrk.o)
 
-.debug_info     0x00000000    0x1f225
+.debug_info     0x00000000    0x1f230
  .debug_info    0x00000000      0x140 ./Project_Settings/Startup_Code/exceptions.o
  .debug_info    0x00000140      0x485 ./Project_Settings/Startup_Code/nvic.o
  .debug_info    0x000005c5      0x267 ./Project_Settings/Startup_Code/startup.o
@@ -5830,14 +5830,14 @@ LOAD linker stubs
  .debug_info    0x00015daa      0x33b ./src/Event_Queue.o
  .debug_info    0x000160e5      0x410 ./src/Fault_Handler.o
  .debug_info    0x000164f5     0x150d ./src/GPIO.o
- .debug_info    0x00017a02     0x46c1 ./src/HMI.o
- .debug_info    0x0001c0c3       0xd7 ./src/IRQ_Control.o
- .debug_info    0x0001c19a      0x793 ./src/LCD.o
- .debug_info    0x0001c92d     0x2365 ./src/main.o
- .debug_info    0x0001ec92       0x26 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_ldivmod.o)
- .debug_info    0x0001ecb8       0x26 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_uldivmod.o)
- .debug_info    0x0001ecde      0x521 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
- .debug_info    0x0001f1ff       0x26 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_dvmd_tls.o)
+ .debug_info    0x00017a02     0x46cc ./src/HMI.o
+ .debug_info    0x0001c0ce       0xd7 ./src/IRQ_Control.o
+ .debug_info    0x0001c1a5      0x793 ./src/LCD.o
+ .debug_info    0x0001c938     0x2365 ./src/main.o
+ .debug_info    0x0001ec9d       0x26 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_ldivmod.o)
+ .debug_info    0x0001ecc3       0x26 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_uldivmod.o)
+ .debug_info    0x0001ece9      0x521 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
+ .debug_info    0x0001f20a       0x26 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_dvmd_tls.o)
 
 .debug_abbrev   0x00000000     0x5048
  .debug_abbrev  0x00000000       0x47 ./Project_Settings/Startup_Code/exceptions.o
@@ -5994,7 +5994,7 @@ LOAD linker stubs
  .debug_aranges
                 0x00000ea0       0x28 ./src/main.o
 
-.debug_ranges   0x00000000     0x16c0
+.debug_ranges   0x00000000     0x16a8
  .debug_ranges  0x00000000       0x18 ./Project_Settings/Startup_Code/exceptions.o
  .debug_ranges  0x00000018       0x18 ./Project_Settings/Startup_Code/system.o
  .debug_ranges  0x00000030       0xc0 ./RTD/src/Clock_Ip.o
@@ -6024,10 +6024,10 @@ LOAD linker stubs
  .debug_ranges  0x00000e40       0x18 ./src/Delay.o
  .debug_ranges  0x00000e58       0x78 ./src/EEPROM.o
  .debug_ranges  0x00000ed0       0xc8 ./src/GPIO.o
- .debug_ranges  0x00000f98      0x510 ./src/HMI.o
- .debug_ranges  0x000014a8       0x88 ./src/LCD.o
- .debug_ranges  0x00001530       0xa0 ./src/main.o
- .debug_ranges  0x000015d0       0xf0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
+ .debug_ranges  0x00000f98      0x4f8 ./src/HMI.o
+ .debug_ranges  0x00001490       0x88 ./src/LCD.o
+ .debug_ranges  0x00001518       0xa0 ./src/main.o
+ .debug_ranges  0x000015b8       0xf0 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
 
 .debug_macro    0x00000000    0x1e535
  .debug_macro   0x00000000      0x13e ./Project_Settings/Startup_Code/exceptions.o
@@ -6287,7 +6287,7 @@ LOAD linker stubs
  .debug_macro   0x0001e509       0x10 ./src/main.o
  .debug_macro   0x0001e519       0x1c ./src/main.o
 
-.debug_line     0x00000000    0x1bb60
+.debug_line     0x00000000    0x1bb70
  .debug_line    0x00000000      0x60b ./Project_Settings/Startup_Code/exceptions.o
  .debug_line    0x0000060b      0x7cd ./Project_Settings/Startup_Code/nvic.o
  .debug_line    0x00000dd8      0x40e ./Project_Settings/Startup_Code/startup.o
@@ -6333,14 +6333,14 @@ LOAD linker stubs
  .debug_line    0x00014cfb      0x790 ./src/Event_Queue.o
  .debug_line    0x0001548b      0x613 ./src/Fault_Handler.o
  .debug_line    0x00015a9e     0x103a ./src/GPIO.o
- .debug_line    0x00016ad8     0x30a9 ./src/HMI.o
- .debug_line    0x00019b81      0x28d ./src/IRQ_Control.o
- .debug_line    0x00019e0e      0x86f ./src/LCD.o
- .debug_line    0x0001a67d      0xdf1 ./src/main.o
- .debug_line    0x0001b46e       0x86 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_ldivmod.o)
- .debug_line    0x0001b4f4       0x68 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_uldivmod.o)
- .debug_line    0x0001b55c      0x59c c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
- .debug_line    0x0001baf8       0x68 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_dvmd_tls.o)
+ .debug_line    0x00016ad8     0x30b9 ./src/HMI.o
+ .debug_line    0x00019b91      0x28d ./src/IRQ_Control.o
+ .debug_line    0x00019e1e      0x86f ./src/LCD.o
+ .debug_line    0x0001a68d      0xdf1 ./src/main.o
+ .debug_line    0x0001b47e       0x86 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_ldivmod.o)
+ .debug_line    0x0001b504       0x68 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_uldivmod.o)
+ .debug_line    0x0001b56c      0x59c c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
+ .debug_line    0x0001bb08       0x68 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_dvmd_tls.o)
 
 .debug_str      0x00000000    0x82877
  .debug_str     0x00000000     0x7e9c ./Project_Settings/Startup_Code/exceptions.o
@@ -6492,7 +6492,7 @@ LOAD linker stubs
  .debug_frame   0x000026b0       0x2c c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_aeabi_uldivmod.o)
  .debug_frame   0x000026dc       0x34 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
 
-.debug_loc      0x00000000     0xa437
+.debug_loc      0x00000000     0xa42e
  .debug_loc     0x00000000       0xb9 ./Project_Settings/Startup_Code/nvic.o
  .debug_loc     0x000000b9      0x159 ./Project_Settings/Startup_Code/startup.o
  .debug_loc     0x00000212       0x2c ./Project_Settings/Startup_Code/system.o
@@ -6521,8 +6521,8 @@ LOAD linker stubs
  .debug_loc     0x000061ba      0x362 ./src/EEPROM.o
  .debug_loc     0x0000651c      0x17b ./src/Event_Queue.o
  .debug_loc     0x00006697      0x3ff ./src/GPIO.o
- .debug_loc     0x00006a96     0x250a ./src/HMI.o
- .debug_loc     0x00008fa0       0x15 ./src/IRQ_Control.o
- .debug_loc     0x00008fb5      0x37d ./src/LCD.o
- .debug_loc     0x00009332       0x92 ./src/main.o
- .debug_loc     0x000093c4     0x1073 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
+ .debug_loc     0x00006a96     0x2501 ./src/HMI.o
+ .debug_loc     0x00008f97       0x15 ./src/IRQ_Control.o
+ .debug_loc     0x00008fac      0x37d ./src/LCD.o
+ .debug_loc     0x00009329       0x92 ./src/main.o
+ .debug_loc     0x000093bb     0x1073 c:/nxp/s32ds.3.6.5/s32ds/build_tools/gcc_v10.2/gcc-10.2-arm32-eabi/bin/../lib/gcc/arm-none-eabi/10.2.0/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
